@@ -167,7 +167,14 @@ function dlabel(d){return d==='31'?'31/01':d+'/02';}
 function fmt(v){return Math.round(v).toLocaleString('vi-VN');}
 function fmtK(v){var a=Math.abs(v);if(a>=1e6)return (v/1e6).toFixed(1)+'M';if(a>=1e3)return (v/1e3).toFixed(0)+'k';return Math.round(v);}
 function el(id){return document.getElementById(id);}
-function chart(id){if(!CI[id])CI[id]=echarts.init(el(id));return CI[id];}
+function chart(id){
+  var dom=el(id);if(!dom)return {setOption:function(){},resize:function(){}};
+  var inst=echarts.getInstanceByDom(dom);           // instance already on THIS dom?
+  if(inst){CI[id]=inst;return inst;}
+  if(CI[id]){try{CI[id].dispose();}catch(e){}}       // old instance bound to a replaced dom → drop it
+  CI[id]=echarts.init(dom);
+  return CI[id];
+}
 var base={backgroundColor:'transparent',textStyle:{fontFamily:'Inter',color:'#64748b'},
   legend:{textStyle:{color:'#64748b'},bottom:0,itemWidth:12,itemHeight:8,icon:'roundRect'},
   tooltip:{trigger:'axis',backgroundColor:'#ffffff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1e293b'},extraCssText:'box-shadow:0 4px 16px rgba(15,23,42,0.12);border-radius:8px;'},
@@ -376,7 +383,7 @@ function drawPage(pid){
   else if(pid==='btp')drawTier('btp');
   else if(pid==='nl')drawNl();
   el('psub').innerText=TITLES[pid][1]+rangeTxt();
-  setTimeout(function(){Object.values(CI).forEach(function(c){c.resize();});},40);
+  setTimeout(function(){Object.keys(CI).forEach(function(k){try{CI[k].resize();}catch(e){}});},40);
 }
 function onFilter(){drawPage(CUR);}
 document.querySelectorAll('.nav-link').forEach(function(l){l.addEventListener('click',function(){
@@ -397,7 +404,7 @@ function boot(){
   initFilters();drawOv();el('psub').innerText=TITLES.ov[1]+rangeTxt();
 }
 boot();
-window.addEventListener('resize',function(){Object.values(CI).forEach(function(c){c.resize();});});
+window.addEventListener('resize',function(){Object.keys(CI).forEach(function(k){try{CI[k].resize();}catch(e){}});});
 </script>
 </body>
 </html>
