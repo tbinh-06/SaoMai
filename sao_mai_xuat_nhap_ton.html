@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo Xuất Nhập Tồn — Sao Mai</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<style>
+:root{
+  --bg-body:#eef1f6;--bg-sidebar:#ffffff;--bg-card:#ffffff;
+  --primary:#2563eb;--secondary:#0891b2;--accent:#7c3aed;
+  --success:#16a34a;--warning:#d97706;--danger:#dc2626;
+  --text-main:#1e293b;--text-muted:#64748b;--text-soft:#94a3b8;
+  --border:#e2e8f0;--border-soft:#eef2f7;
+  --shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md:0 4px 16px rgba(15,23,42,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow:hidden;height:100vh;font-size:14px}
+.app{display:flex;height:100vh;width:100vw}
+.sidebar{width:264px;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;z-index:100}
+.logo{padding:0 24px 26px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border-soft);margin-bottom:14px}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;font-family:'Outfit',sans-serif}
+.logo-text{font-family:'Outfit',sans-serif;font-size:1.25rem;font-weight:700;color:var(--text-main)}
+.logo-sub{font-size:.68rem;color:var(--text-muted);margin-top:1px}
+.nav{flex:1;padding:0 14px}
+.nav-cap{font-size:.66rem;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.08em;padding:8px 16px}
+.nav-link{display:flex;align-items:center;padding:12px 16px;border-radius:10px;color:var(--text-muted);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .18s;cursor:pointer;margin-bottom:3px}
+.nav-link:hover{background:var(--bg-body);color:var(--text-main)}
+.nav-link.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,0.25)}
+.nav-link i{margin-right:12px;font-size:1.05rem;font-style:normal;width:20px;text-align:center}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+header{min-height:72px;padding:14px 32px;background:var(--bg-sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;z-index:50}
+.header-title h1{font-family:'Outfit',sans-serif;font-size:1.35rem;font-weight:600;color:var(--text-main)}
+.header-title p{font-size:.76rem;color:var(--text-muted);margin-top:2px}
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fgroup{display:flex;align-items:center;gap:6px;background:var(--bg-body);border:1px solid var(--border);border-radius:9px;padding:5px 10px}
+.fgroup label{font-size:.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em}
+.filters select{border:none;background:transparent;color:var(--text-main);font-size:.82rem;font-family:inherit;outline:none;font-weight:500;cursor:pointer}
+.view{flex:1;overflow-y:auto;padding:24px 32px}
+.page{display:none}.page.active{display:block;animation:fade .4s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.kpi-card{border-left:4px solid var(--primary)}
+.kpi-label{color:var(--text-muted);font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;display:block}
+.kpi-value{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:7px;display:block;color:var(--text-main)}
+.kpi-value small{font-size:.8rem;color:var(--text-muted);font-weight:500}
+.kpi-trend{font-size:.74rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.col-4{grid-column:span 4}.col-5{grid-column:span 5}.col-6{grid-column:span 6}.col-7{grid-column:span 7}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+@media(max-width:1100px){.col-4,.col-5,.col-6,.col-7,.col-8{grid-column:span 12}}
+.chart-card{display:flex;flex-direction:column}
+.chart-head{margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.chart-title{font-family:'Outfit',sans-serif;font-size:.98rem;font-weight:600;color:var(--text-main)}
+.chart-c{flex:1;width:100%;min-height:280px}
+.chart-c.sm{min-height:240px}
+.tbl-wrap{width:100%;overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:.86rem}
+table.dt th{text-align:right;padding:10px 14px;color:var(--text-muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;border-bottom:2px solid var(--border)}
+table.dt th:first-child{text-align:left}
+table.dt td{padding:12px 14px;text-align:right;border-bottom:1px solid var(--border-soft)}
+table.dt td:first-child{text-align:left;font-weight:600;color:var(--text-main)}
+table.dt tr:hover td{background:var(--bg-body)}
+.utag{font-size:.66rem;padding:2px 8px;border-radius:5px;font-weight:700;background:#eff6ff;color:var(--primary)}
+.det-wrap{max-height:440px;overflow-y:auto;border:1px solid var(--border-soft);border-radius:10px}
+.det-wrap table.dt{font-size:.82rem}
+.det-wrap table.dt th{position:sticky;top:0;background:#f8fafc;z-index:1}
+.det-wrap table.dt td:first-child{max-width:340px;white-space:normal;font-weight:500;font-size:.8rem}
+.det-search{border:1px solid var(--border);border-radius:8px;padding:6px 11px;font-size:.82rem;font-family:inherit;outline:none;width:220px}
+.det-search:focus{border-color:var(--primary)}
+.gtag{font-size:.62rem;padding:2px 7px;border-radius:5px;font-weight:700}
+.acc-item{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.acc-head{display:flex;align-items:center;gap:9px;padding:12px 16px;cursor:pointer;background:#f8fafc;font-size:.9rem;user-select:none}
+.acc-head:hover{background:#f1f5f9}
+.acc-head b{color:var(--text-main);font-weight:600}
+.acc-cnt{margin-left:auto;font-size:.72rem;color:var(--primary);background:#eff6ff;padding:2px 10px;border-radius:20px;font-weight:600}
+.caret{color:var(--primary);font-size:.7rem;width:12px;display:inline-block}
+.acc-body .det-wrap{border:none;border-top:1px solid var(--border-soft);border-radius:0;max-height:400px}
+.btn-group{display:flex;gap:4px;background:#f1f5f9;padding:3px;border-radius:9px;flex-wrap:wrap}
+.btn-seg{border:none;background:transparent;color:var(--text-muted);font-size:.8rem;font-weight:600;padding:6px 13px;border-radius:6px;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-seg.on{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,0.25)}
+.btn-seg:hover:not(.on){color:var(--text-main)}
+.dt tr.lv0{cursor:pointer;background:#f8fafc}
+.dt tr.lv0:hover td{background:#eef2f9}
+.dt tr.lv0 td{font-weight:700;border-bottom:1px solid var(--border)}
+.dt tr.lv0 td:first-child{color:var(--text-main)}
+.dt tr.lv1 td:first-child{padding-left:36px;font-weight:400;font-size:.8rem;max-width:340px;white-space:normal;color:var(--text-muted)}
+.dt tr.lv1 td{background:#fff}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 17px;font-size:.83rem;color:#92400e;line-height:1.6;margin-bottom:18px}
+.note b{color:#b45309}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon">SM</div><div><div class="logo-text">Sao Mai</div><div class="logo-sub">Xuất Nhập Tồn · T02/2026</div></div></div>
+    <nav class="nav">
+      <div class="nav-cap">Báo cáo kho</div>
+      <a class="nav-link active" data-page="ov"><i>📊</i> Tổng quan</a>
+      <a class="nav-link" data-page="tp"><i>📦</i> Thành phẩm</a>
+      <a class="nav-link" data-page="btp"><i>🧵</i> Bán thành phẩm</a>
+      <a class="nav-link" data-page="nl"><i>⚗️</i> Nguyên liệu</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <header>
+      <div class="header-title"><h1 id="ptitle">Tổng quan Xuất Nhập Tồn</h1><p id="psub">Bán thành phẩm & thành phẩm · kỳ 01 – 28/02/2026</p></div>
+      <div class="filters">
+        <div class="fgroup"><label>Từ</label><select id="fFrom" onchange="onFilter()"></select></div>
+        <div class="fgroup"><label>Đến</label><select id="fTo" onchange="onFilter()"></select></div>
+        <div class="fgroup"><label>Loại kho</label><select id="fType" onchange="onFilter()">
+          <option value="">Tất cả</option>
+          <optgroup label="Bán thành phẩm">
+            <option value="manh_det">Manh dệt</option>
+            <option value="manh_trang">Manh tráng</option>
+          </optgroup>
+          <optgroup label="Thành phẩm">
+            <option value="tp_xm">TP xi măng</option>
+            <option value="tp_khac">TP khác</option>
+          </optgroup>
+          <optgroup label="Nguyên liệu (demo)">
+            <option value="nl:hat_pp">Hạt nhựa PP</option>
+            <option value="nl:hat_pe">Hạt nhựa PE</option>
+            <option value="nl:giay_kraft">Giấy Kraft</option>
+            <option value="nl:phu_lieu">Màng OPP, mực, chỉ</option>
+          </optgroup>
+        </select></div>
+      </div>
+    </header>
+    <div class="view">
+      <section id="ov" class="page active">
+        <div class="kpi-row" id="kpiOv"></div>
+        <div class="grid">
+          <div class="card chart-card col-8"><div class="chart-head"><span class="chart-title" id="c1Title">Nhập – Xuất – Tồn theo ngày</span></div><div id="c1" class="chart-c"></div></div>
+          <div class="card chart-card col-4"><div class="chart-head"><span class="chart-title">Biến động tồn kho (đầu kỳ = 100)</span></div><div id="c2" class="chart-c"></div></div>
+          <div class="card col-12"><div class="chart-head"><span class="chart-title">Tổng hợp Xuất – Nhập – Tồn theo nhóm</span></div>
+            <div class="tbl-wrap"><table class="dt"><thead><tr><th>Nhóm kho</th><th>ĐVT</th><th>Tồn đầu kỳ</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn cuối kỳ</th><th>Biến động</th></tr></thead><tbody id="tbl1"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+      <section id="tp" class="page">
+        <div class="kpi-row" id="kpiTp"></div>
+        <div class="grid" id="tpGrid"></div>
+      </section>
+      <section id="btp" class="page">
+        <div class="kpi-row" id="kpiBtp"></div>
+        <div class="grid" id="btpGrid"></div>
+      </section>
+      <section id="nl" class="page">
+        <div class="kpi-row" id="kpiNl"></div>
+        <div class="grid" id="nlGrid"></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+var D={"days":["31","01","02","03","04","05","06","07","08","09","10","11","12","13","20","21","22","23","24","25","26","27","28"],"tk":{"31":{"manh_det":[4881829.9615,270035,291581.91199999995,4849303.049500001],"manh_trang":[436374.55034,82300,86480,432194.55034],"tp_xm":[233355,132297,85310,280342],"tp_khac":[1896070,145424,321145,1720349]},"01":{"manh_det":[4849303.049500001,65550,30300,4866458.049500001],"manh_trang":[432194.55034,27320,0,459514.55034],"tp_xm":[280342,71491,0,351833],"tp_khac":[1720349,39253,67353,1692249]},"02":{"manh_det":[4866458.049500001,345735,272861.947,4857349.1025],"manh_trang":[459514.55034,83400,51437.8,491476.75033999997],"tp_xm":[351833,122236,34700,439369],"tp_khac":[1692249,143632,118532,1717349]},"03":{"manh_det":[4857349.1025,163325,296252.662,4747943.4405000005],"manh_trang":[491476.75033999997,84990,116500,459966.75033999997],"tp_xm":[439369,122283,149700,411952],"tp_khac":[1717349,154279,203421,1668207]},"04":{"manh_det":[4751628.4405000005,160230,358262.57000000007,4545920.8705],"manh_trang":[459966.75033999997,82620,68800,473786.75033999997],"tp_xm":[411952,111034,40300,482686],"tp_khac":[1668207,174992,75586,1767613]},"05":{"manh_det":[4545920.8705,177995,274978.9166,4463066.953899999],"manh_trang":[473786.75033999997,84400,84000,474186.75033999997],"tp_xm":[482686,63071,181600,364157],"tp_khac":[1767613,112394,65294,1814713]},"06":{"manh_det":[4463066.953899999,180960,254406.72600000002,4403315.227899999],"manh_trang":[474186.75033999997,83830,84471,473545.75033999997],"tp_xm":[364157,115326,90000,389483],"tp_khac":[1814413,170447,36378,1948482]},"07":{"manh_det":[4403315.227899999,209330,224458.188,4395760.039899999],"manh_trang":[473545.75033999997,88470,87130,474885.75033999997],"tp_xm":[389483,107960,110200,387243],"tp_khac":[1948482,144995,189225,1904252]},"08":{"manh_det":[4397560.039899999,272440,117848.468,4506488.571899999],"manh_trang":[474885.75033999997,56910,127500,404295.75033999997],"tp_xm":[387243,115251,0,502494],"tp_khac":[1904252,81317,322080,1663489]},"09":{"manh_det":[4506488.571899999,185610,223219.81600000002,4495753.755899999],"manh_trang":[404295.75033999997,81890,80019,406166.75033999997],"tp_xm":[502494,70400,200900,371994],"tp_khac":[1663489,103630,82480,1684639]},"10":{"manh_det":[4495753.755899999,255835,316578.012,4394525.743899999],"manh_trang":[406166.75033999997,138600,141500,403266.75033999997],"tp_xm":[371994,91613,100000,363607],"tp_khac":[1684639,94898,30300,1749237]},"11":{"manh_det":[4394525.743899999,137320,230346.84000000003,4371943.903899999],"manh_trang":[403266.80734,129390,134466,398190.80734],"tp_xm":[363607,132800,0,496407],"tp_khac":[1749137,142513,173820,1717830]},"12":{"manh_det":[4371943.903899999,209770,129668.372,4432965.531899999],"manh_trang":[398190.80734,73220,78670,392740.80734],"tp_xm":[496407,115100,0,611507],"tp_khac":[1717830,61378,17350,1761858]},"13":{"manh_det":[4432965.531899999,30930,102998.45999999999,4398027.071899999],"manh_trang":[392740.80734,38290,8499.6,422531.20734],"tp_xm":[611507,70820,0,682327],"tp_khac":[1761858,20644,44700,1737802]},"20":{"manh_det":[4398027.071899999,25450,50507.656,4356114.415899999],"manh_trang":[422531.20734,13550,5000,431081.20734],"tp_xm":[682327,52179,0,734506],"tp_khac":[1737802,26330,0,1764132]},"21":{"manh_det":[4356114.415899999,164165,116128.13399999999,4375821.281899998],"manh_trang":[431081.20734,43070,39350,434801.20734],"tp_xm":[734506,60500,0,795006],"tp_khac":[1764132,95190,0,1859322]},"22":{"manh_det":[4376399.281899998,180905,301038.6,4261780.6819],"manh_trang":[434800.6483400001,80430,13500,501730.6483400001],"tp_xm":[795006,82158,200700,676464],"tp_khac":[1859322,125225,18260,1966287]},"23":{"manh_det":[4261780.6819,172545,227203.506,4223292.175899999],"manh_trang":[501730.6483400001,80710,89400,493040.6483400001],"tp_xm":[676464,109292,102000,683756],"tp_khac":[1966287,140168,38004,2068451]},"24":{"manh_det":[4223292.175899999,192710,264893.306,4164983.8698999994],"manh_trang":[493040.6483400001,92440,76200,509280.6483400001],"tp_xm":[683756,88061,137600,634217],"tp_khac":[2068101,169920,75265,2162756]},"25":{"manh_det":[4164983.8698999994,288275,242662.1,4132131.7699],"manh_trang":[509280.6483400001,95520,74510,530290.6483400001],"tp_xm":[634217,94300,0,728517],"tp_khac":[2162756,200735,334635,2028856]},"26":{"manh_det":[4132131.7699,151425,30710.388400000003,4253621.3815],"manh_trang":[530290.6483400001,58650,99224,489716.6483400001],"tp_xm":[728517,83061,44474,767104],"tp_khac":[2028856,138270,389315,1777811]},"27":{"manh_det":[4253621.3815,150640,127756.32400000001,4312915.057499999],"manh_trang":[489716.6483400001,20050,50550,459216.6483400001],"tp_xm":[767104,49003,0,816107],"tp_khac":[1777811,126468,183852,1720427]},"28":{"manh_det":[4312915.057499999,189325,268983.14,4254066.9175],"manh_trang":[460216.6483400001,52940,117059.27734000003,396097.37100000004],"tp_xm":[816107,51116,0,867223],"tp_khac":[1720427,102920,48839,1774508]}},"bcn":{"01":{"Sợi":[2185,0],"Dệt":[63435,63435],"Tráng":[0,0],"BaoXM":[0,0]},"02":{"Sợi":[24490,0],"Dệt":[247773,247773],"Tráng":[0,0],"BaoXM":[62260,62260]},"03":{"Sợi":[23800,0],"Dệt":[186847,186847],"Tráng":[0,0],"BaoXM":[138942,138942]},"04":{"Sợi":[10112,0],"Dệt":[156350,156350],"Tráng":[0,0],"BaoXM":[82878,82878]},"05":{"Sợi":[16346,0],"Dệt":[192125,192125],"Tráng":[0,0],"BaoXM":[101500,101500]},"06":{"Sợi":[18774,0],"Dệt":[192935,192935],"Tráng":[0,0],"BaoXM":[81465,81465]},"07":{"Sợi":[11984,0],"Dệt":[213383,213383],"Tráng":[0,0],"BaoXM":[105310,105310]},"08":{"Sợi":[25203,0],"Dệt":[228757,228757],"Tráng":[29150,29150],"BaoXM":[152710,152710]},"09":{"Sợi":[17930,0],"Dệt":[211985,211985],"Tráng":[0,0],"BaoXM":[85592,85592]},"10":{"Sợi":[17934,0],"Dệt":[216510,216510],"Tráng":[56770,56770],"BaoXM":[148050,148050]},"11":{"Sợi":[0,0],"Dệt":[206515,206515],"Tráng":[40520,40520],"BaoXM":[152062,152062]},"12":{"Sợi":[6738,0],"Dệt":[193080,193080],"Tráng":[0,0],"BaoXM":[93665,93665]},"13":{"Sợi":[1630,0],"Dệt":[66860,66860],"Tráng":[0,0],"BaoXM":[10023,10023]},"20":{"Sợi":[915,0],"Dệt":[8365,8365],"Tráng":[15050,15050],"BaoXM":[6000,6000]},"21":{"Sợi":[17240,0],"Dệt":[139635,139635],"Tráng":[42570,42570],"BaoXM":[49662,49662]},"22":{"Sợi":[20192,0],"Dệt":[186420,186420],"Tráng":[79430,79430],"BaoXM":[15328,15328]},"23":{"Sợi":[23582,0],"Dệt":[188715,188715],"Tráng":[84610,84610],"BaoXM":[107949,107949]},"24":{"Sợi":[23556,0],"Dệt":[204930,204930],"Tráng":[84540,84540],"BaoXM":[93106,93106]},"25":{"Sợi":[17309,0],"Dệt":[208295,208295],"Tráng":[43510,43510],"BaoXM":[71753,71753]},"26":{"Sợi":[6629,0],"Dệt":[151090,151090],"Tráng":[0,0],"BaoXM":[63859,63859]},"27":{"Sợi":[10600,0],"Dệt":[184690,184690],"Tráng":[5450,5450],"BaoXM":[35360,35360]},"28":{"Sợi":[26221,0],"Dệt":[208590,208590],"Tráng":[21640,21640],"BaoXM":[63440,63440]}},"soi_ca":{"31":[0,0,0],"01":[0,0,2185],"02":[8582,8626,7282],"03":[8960,8651,6189],"04":[3629,1850,4633],"05":[5890,5277,5179],"06":[5675,7621,5478],"07":[4735,5395,1854],"08":[11003,8128,6072],"09":[5923,5804,6203],"10":[9381,4553,4000],"11":[0,0,0],"12":[3613,3125,0],"13":[1630,0,0],"20":[915,0,0],"21":[5320,7695,4225],"22":[7695,7703,4794],"23":[10248,8562,4772],"24":[9381,9572,4603],"25":[5854,5252,6203],"26":[1410,3365,1854],"27":[4874,5726,0],"28":[10757,10430,5034]},"nl":{"hat_pp":{"31":[212000,0,0,212000],"01":[212000,0,9593,202407],"02":[202407,0,9771,192636],"03":[192636,0,9475,183161],"04":[183161,0,10758,172403],"05":[172403,32457,9704,195156],"06":[195156,0,9572,185584],"07":[185584,0,13514,172070],"08":[172070,0,15773,156297],"09":[156297,0,16761,139536],"10":[139536,0,14139,125397],"11":[125397,68207,16763,176841],"12":[176841,14796,12249,179388],"13":[179388,33249,16997,195640],"20":[195640,0,13560,182080],"21":[182080,0,11372,170708],"22":[170708,0,13429,157279],"23":[157279,12527,13589,156217],"24":[156217,0,10480,145737],"25":[145737,14679,14233,146183],"26":[146183,0,9798,136385],"27":[136385,0,9514,126871],"28":[126871,0,14070,112801]},"hat_pe":{"31":[28500,0,0,28500],"01":[28500,0,1543,26957],"02":[26957,0,1828,25129],"03":[25129,0,1408,23721],"04":[23721,0,2331,21390],"05":[21390,0,1067,20323],"06":[20323,0,1975,18348],"07":[18348,8055,1603,24800],"08":[24800,0,1489,23311],"09":[23311,0,1049,22262],"10":[22262,1761,1237,22786],"11":[22786,0,1211,21575],"12":[21575,0,1763,19812],"13":[19812,1412,2465,18759],"20":[18759,0,2516,16243],"21":[16243,0,1542,14701],"22":[14701,6786,2323,19164],"23":[19164,0,1917,17247],"24":[17247,8750,2532,23465],"25":[23465,0,1091,22374],"26":[22374,0,1870,20504],"27":[20504,0,1033,19471],"28":[19471,4497,2397,21571]},"giay_kraft":{"31":[86000,0,0,86000],"01":[86000,0,7450,78550],"02":[78550,0,6960,71590],"03":[71590,0,6642,64948],"04":[64948,7891,6711,66128],"05":[66128,0,4759,61369],"06":[61369,0,5587,55782],"07":[55782,0,4859,50923],"08":[50923,0,7059,43864],"09":[43864,0,7867,35997],"10":[35997,20640,5162,51475],"11":[51475,0,8301,43174],"12":[43174,0,4921,38253],"13":[38253,0,8307,29946],"20":[29946,0,7202,22744],"21":[22744,0,6916,15828],"22":[15828,20719,5036,31511],"23":[31511,0,5700,25811],"24":[25811,0,3898,21913],"25":[21913,33891,5293,50511],"26":[50511,0,3833,46678],"27":[46678,22773,7232,62219],"28":[62219,0,8439,53780]},"phu_lieu":{"31":[16200,0,0,16200],"01":[16200,0,1257,14943],"02":[14943,1232,1474,14701],"03":[14701,0,1317,13384],"04":[13384,0,907,12477],"05":[12477,4134,903,15708],"06":[15708,1157,910,15955],"07":[15955,867,713,16109],"08":[16109,0,612,15497],"09":[15497,0,553,14944],"10":[14944,1123,654,15413],"11":[15413,4697,603,19507],"12":[19507,0,1128,18379],"13":[18379,939,1128,18190],"20":[18190,0,1149,17041],"21":[17041,0,855,16186],"22":[16186,0,985,15201],"23":[15201,3003,618,17586],"24":[17586,0,977,16609],"25":[16609,0,819,15790],"26":[15790,2851,647,17994],"27":[17994,1008,1258,17744],"28":[17744,0,1348,16396]}},"nl_meta":{"hat_pp":{"name":"Hạt nhựa PP","unit":"Kg","role":"Kéo sợi → dệt manh"},"hat_pe":{"name":"Hạt nhựa PE","unit":"Kg","role":"Thổi màng / túi lồng bao"},"giay_kraft":{"name":"Giấy Kraft","unit":"Kg","role":"Tráng ghép bao KP/KPK"},"phu_lieu":{"name":"Màng OPP, mực, chỉ","unit":"Kg","role":"Tráng bóng, in nhãn, may"}},"detail":{"manh_det":[["Manh dệt Xi măng Dán đáy D970 K50 sợi 3.ly (M91) manh tròn",408795,0,1700,407095],["Manh dệt phằng 3mm K1080 D940 Xi măng Vissai",261490,738520,726290,290460],["Manh dệt PP Hàn quốc  K45 sợi 2.8ly D850  Sọc Hồng",250314,0,0,250314],["Manh dệt xi măng  D920 K1070-1085",322460,524120,563320,234760],["Manh dệt PP Hàn quốc  K55 sợi 2.8ly D850  Sọc Xanh Lá",199579,0,0,199579],["Manh dệt BS AT K670 sợi 2.4mm D1100",131312,0,0,131312],["Manh dệt PP Hàn Quốc Cam Sọc Xanh Dương K70 sợi 3ly D800",116244,0,0,116244],["Manh dệt KP Hàn Quốc K1250 sợi 3ly ( sợi tồn)",74930,40200,0,101110],["Manh dệt PP Hàn Quốc Xanh Sẫm K295-300 sợi 2.8ly D770",94348,0,0,94348],["Manh dệt tròn 2.5 mm D1050 K520 Thức Ăn GSQT",72059,0,0,72059],["Manh dệt PP Hàn Quốc K47 sợi 2.8ly D860  Sọc Xanh Dương",68771,0,0,68771],["Manh dệt INTEMEX  K67 D1000 Sợi 2,5ly",61132,65855,55220,68587],["Manh Đường Sơn La K600-610 sợi 2.3 ly  D980",58259,0,0,60679],["Manh dệt BS Phúc Thịnh K66 sợi 2.5mm D970+980",31370,93530,66495,53215],["Manh dệt tròn 2.5 mm K605-610 D730 URE Vàng Chanh NA Chèn 1 thoi",50125,0,0,50125],["Manh Dệt tròn 2,5 ly Hàn Quốc K560 D720",13060,252830,224005,49020],["Manh dệt táp Trung Hải K650 sợi 2.8ly",96040,40,52740,43300],["Manh dệt PP Trung Hải K45 sợi 2,4ly D720",191165,108410,252825,42150],["Manh dệt Thái Lan TCS 2.3 ly D810 K662 chèn 1 thoi",31685,183770,177719,41561],["Manh dệt Phượng Hoàng K1110 sợi 3.1ly D850 ( máy 20)",47620,60000,49940,40000],["Manh dệt Trung Hải K50 D760 Sợi mới",86595,208360,268225,38290],["Manh dệt PP Hàn Quốc K35 sợi 2.8ly D850  Sọc Xanh Dương",65833,0,27906,37926],["Manh dệt PP Thái Lan Kim Cương K66 sợi 2.3 D790",35785,120980,126651,37603],["Manh dệt Thái Lan sợi 2.3ly D630 K524-528 chèn 1 thoi ( bao ABC)",35091,0,0,35091],["Manh dệt tròn 2.5 mm K605-610 D730 URE Vàng Cam NA Chèn 1 thoi",34512,0,0,34512],["Manh dệt PP hàn Quốc K1130 sợi 3ly D970 sợi trong ( máy 21)",33500,0,0,33500],["Manh dệt tròn Hoa Sen K710 sợi 2.5ly D680 ( máy 33)",31330,0,0,31330],["Manh Hàn Quốc Sợi  2.8 ly  Cam Sọc Hồng K65",30695,0,0,30695],["Manh dệt Hàn Quốc K40 sợi 2,5ly D1120 màu be chèn 3 thoi",30163,0,0,30163],["Manh dệt Hàn Quốc D920 K500 sợi 2.5ly chèn 1 thoi ( manh cũ)",29745,0,0,29745],["Manh dệt Tấm Hàn Quốc K770+790 D770 sợi 3.1ly",17870,11180,0,29050],["Manh dệt táp VISSAI K650 sợi 3.1ly",48450,16240,32710,28860],["Manh dệt Manh Hàn Quốc K570 sợi 2.5ly D780 máy 90+91",0,90070,66430,28765],["Manh dệt tròn 2.5mm K520 D760 Trung Hải",9170,62585,44165,27590],["Manh dệt phẳng Manh Hàn Quốc K1080 Sợi 2.5ly D1300",13040,0,0,24720],["Manh dệt tròn 2.8 mm K350 D940 Hàn Quốc Sọc Xanh Lá",0,37130,19803,20877],["Manh dệt Khuonmysay  D1170 K67",20860,0,0,20860],["Manh dệt tròn 2.5mm K450 D1070 Hàn Quốc ( sợi dọc BS AT, sợi ngang cam",14190,11945,0,20645],["Manh dệt phẳng Manh Hàn Quốc K1250 Sợi 3ly D950 ( máy 20+21)",20200,0,0,20200],["Manh dệt tròn K660 BS Sợi 1.8mm (sợi dọc zumbo + sợi ngang KT)",18660,0,0,18660],["Manh dệt Hàn Quốc K500 D880 sợi 2.5ly chèn 1 thoi",18372,0,0,18372],["Manh dệt PP Hàn Quốc K56- GOYANG sợi dọc 2,3ly D690, sợi ngang 2,5ly D",12410,122060,113895,17645],["Manh dệt tròn 2.4mm K480 D760 Trung Hải",55545,129495,165430,16750],["Manh dệt PP Hàn Quốc Xanh Sẫm K295-300 sợi 2.8ly D770 ( suin) máy 48+4",15970,0,0,15970],["Manh dệt tròn 2.5mm K560 D980  BAEKLL Hàn Quốc",0,21445,6065,15380],["Manh dệt tròn Yên Bái hàn Quốc K56 D1190 sợi 2,5ly",24235,22175,30070,15025],["Manh dệt Hàn Quốc K300 sợi 2,5ly D800 màu be chèn 1 thoi",15020,0,0,15020],["Manh dệt Hàn Quốc cam sọc hồng K61 sợi 2,8ly D600",3160,86520,76974,13736],["Manh dệt Thái Lan TCS K56 sợi 2,3ly D700 chèn 1 thoi",11430,4930,2020,12910],["Manh dệt PP Hàn Quốc  Sọc Xanh Lá  K55 sợi 2.8mm D920 mẫu",12710,0,0,12710],["Manh dệt PP Hàn Quốc Xanh Sẫm K35 sợi 2.8ly D970  chen  6 thoi",12317,0,0,12317],["Manh dệt PP Hàn Quốc Sọc Xanh Lá K45(J.Y) D820 dệt chèn (3 chèn 1)",0,48305,39296,11694],["Manh dệt Tư Nhân K40",11096,0,0,11096],["Manh dệt PP hàn Quốc K305-310 sợi 3,1ly D780 màu xanh sẫm( dệt tròn, x",11088,0,0,11088],["Manh dệt xi măng  D920 K1070-1085 máy 28+26",191685,85215,247920,10915],["Manh dệt Hàn Quốc tráng sọc cam đỏ K47 sợi 2,3ly D1040 chèn 6 thoi",7695,52220,52415,10725],["Manh dệt PP Hàn Quốc De Han Xanh Sẫm K35 sợi 3ly D1190",10690,0,0,10690],["Manh dệt  Tròn Hàn Quốc (JY) K53 sợi 2,5ly D770",0,27470,19040,10000],["Manh dệt Hàn Quốc K40 sợi 2,8ly D1120 màu be chèn 1 thoi",9850,0,0,9850],["Manh Dệt  khổ 1080 dùng tráng manh cắt đai máy 26",4100,39760,34490,9235],["Manh dệt Manh  PP Hàn Quốc K990 sợi 3ly D1030",1130,0,0,9210],["Manh dệt PP Hàn Quốc K56-D690 - GOGANG",0,3000,0,8725],["Manh dệt Hàn Quốc bao dán đáy K535 sợi 2,5ly D680 (sẽ  làm cho yên bái",14766,0,6196,8570],["Manh dệt bột sắn Fococev K67 sợi 2,5ly D1050",66659,0,37873,8522],["Manh dệt Hàn Quốc DEHAN K40 sợi 2,3ly D1200 màu be chèn 6 thoi",0,30945,24175,8310],["Manh dệt Hàn Quốc K550 sợi 2.5ly D780 chèn 1 thoi",3070,38200,31050,7150],["Manh dệt Hàn Quốc D750 K1200 sợi 2.5ly",6440,0,0,6440],["Manh dệt Dán đáy mẫu  HQ 2.8 Ly - K500",6430,0,0,6430],["Manh dệt Mẫu Thái Lan K510 D730 sợi 2.3mm",6330,0,0,6330],["Manh dệt tròn 2.5mm K50 D760 Yên Bái dán đáy",6320,0,0,6320],["Manh dệt phẳng Hàn Quốc K1000 sợi 2,8ly D780 màu vàng sọc hồng (đơn S.",550,5530,0,6080],["Manh dệt tròn 2.5mm K400 D830 Trung Hải",5692,0,0,5692],["Manh dệt tròn 2.5 mm K700 D700 Hàn Quốc Cam Sọc Hồng",5630,0,0,5630],["Manh dệt phẳng Hàn Quốc K1070 sợi 2,8ly D860 cải tiến",5000,0,0,5000],["Manh dệt Hoa Sen K1240 sợi 3.1ly D1050 ( máy 27)",5000,0,0,5000],["Manh dệt tròn 2.5 mm D1050 K60 Thức Ăn GSQT",4780,0,0,4780],["Manh dệt PP Hàn Quốc Màu  BE   K300  D1200 ( J.Y)",0,33590,28825,4765],["Manh dệt PP Hàn Quốc Cam Sọc Hồng K75 sợi 3ly D800",4500,0,0,4500],["Manh Hàn Quốc Sợi  2.5 ly  K 56 D680  Mẫu",4465,0,0,4465],["Manh dệt tròn 2.3 mm K565-570 D1190 Hàn Quốc chèn",4025,0,0,4025],["Manh dệt tròn Hoa Sen K630 sợi 2.5ly D680 ( máy 32)",3350,0,0,3350],["Manh dệt Dán đáy mẫu  HQ 2.8 Ly - K465",3300,0,0,3300],["Manh dệt tròn 2.5 mm K540 D970 Hàn Quốc (manh SY)",3175,0,0,3175],["Manh dệt PP Hàn Quốc Cam Sọc Hồng K75 sợi 3ly D770",3105,0,0,3105],["Manh dệt Đường Đà Nẵng K610 D1320",1300,0,0,3100],["Manh dệt Hàn Quốc D910 K520 sợi 2.5ly",2760,0,0,2760],["Manh Dệt Hàn Quốc K50 D950 Sọc Xanh Dương sợi 2.5 ly chèn",2480,0,0,2480],["Manh Đường Sơn La K600-610  sợi 2.3 ly  sợi mẫu D980",2420,0,0,2420],["Manh dệt Hàn Quốc D940 K705-710 sợi 3.1ly (M38)",2393,0,0,2393],["Manh dệt Thái Lan Kim Cương K66 sợi 2,3ly D790",0,0,0,2390],["Manh dệt Thái Lan Star sợi 2.3 ly D700 K53 chèn 1 thoi",2380,0,0,2380],["Manh dệt Tấm Hàn Quốc Xẻ K395 D770 sợi 3.1ly",2300,0,0,2300],["Manh dệt Hàn Quốc K40 sợi 2,8ly D1120 màu be chèn 3 thoi",73696,0,38313,2233],["Manh dệt Hàn Quốc K530 sợi 2.5ly D780 chèn 1 thoi",8240,0,6020,2220],["Manh dệt Trung Hải K60 D1200",2000,0,0,2000],["Manh dệt tròn 3.1  mm K705  D 910 Hàn Quốc  vàng cam M77 chèn 1 thoi",1926,0,0,1926],["Manh dệt tròn 2.5 mm K560 Hàn Quốc (sợi tồn loại B) sợi màu",1770,0,0,1770],["Manh dệt Hàn Quốc caro cam  K330 sợi 2.5ly D1020   chèn 6 thoi",190,11595,9885,1710],["Manh dệt tròn 2.3 mm K530 D1050 Mẫu Thanh Hưng",1600,0,0,1600],["Manh Hàn Quốc Sợi  2.5 ly  K 56 D620 Mẫu",1420,0,0,1420],["Manh dệt bột đá Yên Bái K45 sợi 2,5ly D720 ( sợi HQ)",1330,0,0,1330],["Manh dệt Manh  PP Hàn Quốc K980-990 sợi 3ly D1030",0,550,0,1130],["Manh dệt  KMS K520-530 dùng sợi 2.5 ly đường Thạch Thành D1100",1000,0,0,1000],["Manh dệt Hàn Quốc DEHAN K980 vàng sọc hồng sợi 2,8ly D770 chèn 1 thoi",0,3960,3000,960],["Manh dệt tròn 2.5 mm K450 D880 Hàn Quốc",700,0,0,700],["Manh dệt phẳng Hàn Quốc  K1000 sợi 2,8ly D780 màu vàng sọc hồng (đơn S",6160,550,6160,550],["Manh dệt Hàn Quốc K40 Mẫu dùng sợi ngang 3ly sợi dọc 2.3ly",0,520,0,520],["Manh dệt PP Hàn Quốc  Sọc Xanh Lá  K55 sợi 2.8mm D1050 mẫu",390,0,0,390],["Manh dệt tròn 2.5mm K560 D860 Hàn Quốc DEHAN",12200,0,12200,0],["Manh dệt Sợi màu K55",3000,0,3000,0],["Manh dệt Hàn Quốc K530 sợi 2.5ly D860",4060,0,4060,0],["Manh dệt tròn 2.8 mm K700 D690 Hàn Quốc cam sọc hồng",6000,2930,6030,0],["Manh dệt tròn 2.8 mm K750 D690 Hàn Quốc cam sọc xanh dương",6160,0,6160,0],["Manh Dệt tròn 2,5 ly Hàn Quốc K570 D720",35365,0,35365,0],["Manh Dệt tròn 2,5 ly Hàn Quốc K560 D770",9250,0,9250,0],["Manh dệt Hàn Quốc K56 D720 ( Manh A sợi ngang Del 830 )",3000,0,3000,0],["Manh dệt tròn 2.5 mm K575-580 D810 Hàn Quốc",2885,0,2885,0],["Manh dệt Sợi Màu Hàn Quốc K53 (đơn SUIN)",0,0,0,0],["Manh dệt tròn 2.5mm K580 D760 Trung Hải",9390,0,9390,0],["Manh dệt Trung Hải K55 sợi 2.4ly D760",71610,0,71610,0],["Manh dệt mẫu phân bón Ninh Bình K48 sợi 2,5ly D830 cài biên sọc xanh d",9900,0,9900,0],["Manh dệt bột sắn Fococev K67 Sợi 2.5mm D1050",2040,0,0,0],["Manh dệt tròn 2.5 mm K605-610 D850 URE Vàng Cam MT Chèn 1 thoi",0,0,0,0],["Manh dệt tròn 2.5 mm K605-610 D850 URE Vàng Chanh MT Chèn 1 thoi",0,0,0,0],["Manh dệt sợi 2.5mm bột đá MEGA K45 D920",86380,0,86380,0],["Manh dệt Manh PP Hàn Quốc K990 sợi 3ly D1030",9210,38200,38750,0],["Manh dệt phằng 3mm K970 D950 Singapo",0,36160,36160,0]],"manh_trang":[["Manh PP bột đá Trung Hải K45",92340,249710,127871,214179],["Manh PP bột đá Trung Hải K48",82065,177310,96125,163250],["Manh tráng PP Hàn Quốc K56  D690 GOYANG",0,112390,8000,104390],["Manh tráng PP VINA Biến Tính K60",90320,0,0,90320],["Manh PP MEGA K45",61285,88440,69215,80510],["Manh PP bột đá Trung Hải K55",60036,68740,51137,77640],["Manh PP dán đáy Visai K51 Manh tráng  chưa in",34964,208500,166433,77030],["Manh KP giấy HVT LS",32890,429980,383090,75740],["Manh KP AD HVT TN",110723,730740,759823,69640],["Manh tráng PP Singapor L2",0,49970,0,49970],["Manh KP giấy HVT LS Tuấn Tài",37660,261040,260320,38380],["Manh tráng PP Hoa Sen K900",43890,0,14720,29170],["Manh Tráng PP cắt đai K1020",28480,26900,33380,22000],["Manh tráng PP Hàn Quốc K56  D720  Manh Bóng",24070,0,3070,21000],["Manh KP giấy HVT LS Thành Dũng",26479,0,7479,19000],["Manh KP giấy HVT LS Chỉ định,Loại B",49110,0,31010,18100],["Manh tráng PP Yên Bái K60",16678,0,0,16678],["Manh PP Hàn Quốc K53 D770",0,20940,12750,16190],["Manh tráng PP Phú Thọ K590 loại 2( D1200)",15670,0,0,15670],["Manh tráng PP Hàn Quốc K57  D780",0,86460,71540,14920],["Manh PP bột đá Trung Hải K58",11853,11850,8893,14810],["Manh tráng PP Hàn Quốc K53 D800",12330,0,0,12330],["Manh KP AD HVT TN chỉ định, M17,  M19",20000,0,20000,12000],["Manh tráng PP Hàn Quốc K56  D720 Manh mờ",12830,232410,233544,11696],["Manh tráng bao Dán Đáy THNA-07 K50*93 manh lỗi",10690,0,0,10690],["Manh KP AD HVT LS Vissai",6560,0,0,10600],["Manh PP Hàn Quốc K53 D860 +D900",12790,8950,2625,10415],["Manh tráng PP Hàn Quốc K54 D800",9726,0,0,9726],["Manh PP Yên Bái K45",8940,0,0,8940],["Manh tráng PP Singapor L1",0,57690,50010,7680],["Manh KP Hoa sơn đã trở giấy LS",7020,0,0,7020],["Manh tráng PP Yên Bái K535 D680",29511,0,22544,6967],["Manh tráng PP Hàn Quốc K53 D780 chèn 1 thoi",0,5820,0,5820],["Manh PP bột đá Trung Hải K52",32866,43550,71416,5000],["Manh KP HQ K1158 giấy LS",3950,0,0,4950],["Manh tráng PP Yên Bái K52 D620",4700,0,0,4700],["Manh tráng PP Hàn Quốc K53 D750",4500,0,0,4500],["Manh PP Hàn Quốc K53 D860  màu be nhạt",4485,0,0,4485],["Manh KP Hàn Quốc K885",4000,0,0,4000],["Manh PP Hàn Quốc K1040",3810,0,0,3810],["Manh PP HQ K1177 màu ghi",3800,0,0,3800],["Manh tráng PP Hàn Quốc K53 D800+ 780",3630,0,0,3630],["Manh KP HQ K1158 giấy BB có phun nhám",3400,0,0,3400],["Manh PP bột đá Trung Hải K50 D800+ D760",36587,250040,283527,3100],["Manh BĐ Trung Hải K50 THNA- 01T",3100,0,0,3100],["Manh Tráng KP Hàn Quốc giấy LS",3000,0,0,3000],["Manh PP Hàn Quốc K1125 mẫu",3000,0,0,3000],["Manh PP Hàn Quốc K54 D960 sợi 2,5ly",3000,0,0,3000],["Manh BĐ Trung Hải K50 THNA- 01",3000,0,0,3000],["Manh PP Hàn Quốc K53 D840",2930,0,0,2930],["Manh tráng PP Hoa Sen K71",2800,0,0,2800],["Manh tráng PP Hoa Sen K63",4800,0,2000,2800],["Manh Tấm HQ K725",2636,0,0,2636],["Manh PP Hàn Quốc K1100",2500,0,0,2500],["Manh tráng bao Dán HQ Đáy K535 D750",2229,0,0,2229],["Manh PP HQ K1040",2000,0,0,2000],["Manh PP TAGS Quảng Trị K52",1692,0,0,1692],["Manh tráng KP Hàn Quốc giấy Malai",1500,0,0,1500],["Manh tráng bao Dán HQ Đáy K535 đã in ( bao) D750",1500,0,0,1500],["Manh PP TAGS Quảng Trị K60",1300,0,0,1300],["Manh Tráng KP Hàn Quốc- giấy Malai đã nối",1200,0,0,1200],["Manh KP HQ K1138 giấy LS",1000,0,0,1000],["Manh tráng PP Hàn Quốc K56 D720 Đã in cuộn PP Xanh đen",12202,0,11852,950],["Manh PP TAGS Quảng Trị K55",500,0,0,500],["Manh phân bón Ninh Bình K48 đã in",0,38250,37809,441],["Manh PP Trong K1068",3480,0,3480,0],["Manh PP Hàn Quốc K950",2500,0,2500,0],["Manh PP K1128 sợi 3ly D950",1200,0,1200,0],["Manh Tấm HQ K674",16638,0,16638,0],["Manh tấm HQ K690 tráng 1 mặt",4670,0,4670,0],["Manh PP tấm K690",2751,0,2751,0],["Manh Tấm HQ K740 Tráng 2 mặt",0,0,0,0],["Manh Tấm HQ K736 Tráng 2 mặt",746,0,746,0],["Manh PP Hàn Quốc K960",1600,34370,35970,0],["Manh tráng PP Hàn Quốc K57  D720  Manh Mờ",7300,29870,37170,0],["Manh tráng PP Hàn Quốc K57  D720  Manh Bóng",2420,0,2420,0],["Manh tráng PP Hàn Quốc K53 màu",0,0,0,0],["Manh tráng PP Hàn Quốc K52 D860",1600,0,1600,0],["Manh PP dán đáy K50 mẫu",3040,0,3040,0],["Manh PP Hàn Quốc K45 D1200 sọc trắng+ cam đỏ LẦN 2",0,0,0,0],["Manh tráng PP Hàn Quốc K53 D800+ 780 in made in Vietnam",0,0,0,0],["Manh tráng PP Hàn Quốc K56 D720 Đã in cuộn",0,108800,108800,0],["Manh tráng PP Hàn Quốc K53 D900",0,0,0,0],["Manh mẫu k45  sợi D 1100",2000,0,2000,0],["Manh phân bón Ninh Bình K48",29115,10630,39745,0],["Manh BĐ Trung Hải K52 in Viền đỏ (m)",4107,0,4106,0],["Manh BĐ Trung Hải K52 in Viền Cam (m)",3900,0,3900,0],["Manh BĐ Trung Hải THNA-07 K52",3100,0,3100,0],["Manh BĐ Trung Hải THNA-07 K52 Lotno 2597000",37053,0,37053,0],["Bao bột đá Trung Hải Super- 2C K50*(90) 76 hàng phủ (sai KT)",7300,0,7300,0],["Bao PP PCB30 VINACOMIN K51*76",0,0,0,0],["Bao PP PCB40 VINACOMIN K51*76",0,0,0,0],["Manh PP Yên Bái K55 xẻ biên",0,24410,24410,0],["Manh tráng PP Hàn Quốc K56 D860",0,12130,8980,0],["Manh tráng PP Hàn Quốc K56 D970",0,5900,5900,0],["Manh PP Yên bái K56",0,4890,4890,0],["Manh tráng PP Hàn Quốc K56 D770",3080,0,3080,0]],"tp_xm":[["BAO KPK LONG SƠN",21585,332282,189900,163967],["BAO KPK ĐỒNG LÂM",1252,240402,121675,119979],["BAO KPK LONG SƠN NGHI SƠN THANH HÓA",3200,100121,0,103321],["KPK-PCB40 Long Sơn Nghi Sơn TH lô 8001",0,100121,0,100121],["BAO KPK LONG SƠN QUẢNG NGÃI",18185,132261,90000,60446],["KPK-PCB40 Long Sơn Quảng Ngãi lô QN3002",0,100171,40000,60171],["KPK-PCB40 Đồng Lâm Lô 019.26.B4.ĐLXM",0,40440,23,40417],["KPK-PCB40 Đồng Lâm Lô 021.26.B4.ĐLXM",0,39821,0,39821],["KPK-PCB30 Đồng Lâm Lô 019.26.B3.ĐLXM",0,39682,0,39682],["KPK-PCB40 Long Sơn Nghi Sơn TH lô 8008",3200,0,0,3200],["BAO KPK THÀNH THẮNG",400,0,0,400],["BAO KPK THÀNH THẮNG P40",400,0,0,400],["KPK-PCB40 Thành Thắng Lô TTĐ - 01/KPK",400,0,0,400],["BAO KPK VICEM HOÀNG MAI",200,0,0,200],["KPK-PCB40 Vicem Hoàng Mai lô SM-B4-006",200,0,0,200],["BAO KPK-PCB30 LONG SƠN BỈM  SƠN THANH HÓA",200,0,0,200],["KPK-PCB30 Long Sơn Bỉm Sơn  lô 8018",200,0,0,200],["KPK-PCB40 Long Sơn Quảng Ngãi lô QN3001",18085,32090,50000,175],["BAO KP- PCB NHẤT SƠN",0,99521,99400,121],["KPK QUYỀN THIÊN PHÚ",113,0,0,113],["KPK QUYỀN THIÊN PHÚ P40",113,0,0,113],["KPK-PCB40 Long Sơn Quảng Ngãi lô QN3011",100,0,0,100],["BAO KPK QUAN SƠN",19500,30181,49600,81],["KPK- PCB40 Quan Sơn",19500,30181,49600,81],["KP-PCB40 QUAN SƠN lô QTP-002",19500,30181,49600,81],["KPK- PCB40 VNCOIMINS Tân Quang Lào Cai lô SM 001",76,0,0,76],["BAO KP- PCB40 NHẤT SƠN",0,49361,49300,61],["KP-PCB40 Nhất Sơn Lô SM-002",0,49361,49300,61],["BAO KP- PCB30 NHẤT SƠN",0,50160,50100,60],["KP-PCB30 Nhất Sơn Lô SM-001",0,50160,50100,60],["KPK-PCB30 Đồng Lâm Lô 011.26.B3.ĐLXM",0,40340,40300,40],["KPK- PCB40 VNCOIMINS Tân Quang Lào Cai lô SM 002",37,0,0,37],["KPK-PCB30 Đồng Lâm Lô 015.26.B3.ĐLXM",0,40619,40600,19],["KPK-PCB40 Đồng Lâm Lô 004.26.B4.ĐLXM",1100,0,1100,0],["KPK-PCB40 Đồng Lâm Lô 008.26.B4.ĐLXM",64,0,64,0],["KPK-PCB40 Đồng Lâm Lô 011.26.B4.ĐLXM",88,0,88,0],["BAO KPK LONG SƠN BỈM  SƠN THANH HÓA",0,99900,99900,0],["KPK-PCB40 Long Sơn Bỉm sơn Thanh Hóa lô 8001",0,99900,99900,0],["KPK-PCB40 Đồng Lâm Lô 015.26.B4.ĐLXM",0,39500,39500,0]],"tp_khac":[["THÀNH PHẨM BAO BỘT ĐÁ TRUNG HẢI",54055,741866,636060,159561],["Bao bột đá Trung Hải THNA-07 K45*71(570) dán đáy",9335,77362,42800,43897],["Bao bột đá Trung Hải PG- 05 K48*84(68) van",3850,67356,40050,30400],["bao tư Nhân",27000,45070,44370,27700],["Bao bột đá Trung Hải THNA-07 K52*108(92) van",4400,21722,13900,12222],["Bao bột đá Trung Hải bao trắng in thông tin Ánh Minh lot K50*98(82) va",0,13220,3700,9520],["Bao bột đá Trung Hải Bao viền cam K52*108 (92) van",0,7900,0,7900],["Bao Van Trung Hải K58*86",7110,0,0,7110],["Bao Xuất khẩu Gạo Lào K60*94",7000,0,0,7000],["Bao bột đá Trung Hải THNA-02 K55*82",6900,0,0,6900],["Bao bột đá Trung Hải SUPER -2C   K50*90 -74 van manh tồn",0,6900,0,6900],["Bao bột đá Trung Hải THNA-01T K55*89-86",0,6740,0,6740],["Bao bột đá Trung Hải THAN-07 K52*108(92) van",0,4400,0,4400],["Bao bột đá Trung Hải THNA-07 K50*80 dán đáy ( dây xanh)",4200,0,0,4200],["Bao bột đá Trung Hải  THAN-01T K50*92 Hàng phủ",0,5445,2245,3200],["Bao bột đá Trung Hải  THAN-01T K50*92 VAN",3200,0,0,3200],["Bao rác thải khó phân hủy màu vàng K60*114 (110)",3100,0,0,3100],["Bao bột đá Trung Hải không in van K50*94(78)",3000,0,0,3000],["Bao bột đá Trung Hải Bao Sọc Đỏ K52*98 (82) van",0,2838,0,2838],["Bao bột đá Trung Hải Bao Sọc Đỏ K55*98 (82) van",2838,0,0,2838],["Bao BĐ Trung Hải VRN-4 K50*74 đã hủy lệnh",2600,0,0,2600],["Bao rác thải hữu cơ màu xanh K52*84 (80)",2600,0,0,2600],["Bao bột đá Trung Hải SMKC-400 50kg (viền đen) van K55*99(83)",2100,0,0,2100],["Bao bột đá Trung Hải OCU 2A K50*88(72) van",0,3499,2245,1254],["Bao bột đá Trung Hải bao trắng không in K45*70(56) dán đáy)",1200,0,0,1200],["Bao bột đá Trung Hải THNA- 03 K50*86 (70) van",0,20722,19550,1172],["Bao bột đá Trung Hải TIRU- 03T K50*  Hàng phủ",0,1123,0,1123],["Bao bột đá Trung Hải MIC 10 K50*94(78) van",0,1105,0,1105],["Bao bột đá Trung Hải THAN-07 K52*98 (82) van manh tồn",0,1000,0,1000],["Bao bột đá Trung Hải THAN-07 K55*98 (82) van manh tồn",1000,0,0,1000],["Bao bột đá Trung Hải THNA-07 K50*77 dán đáy ( dây vàng)",900,0,0,900],["Bao bột đá Trung Hải PMC 10C1 K50*88 (82) hàng phủ",700,0,0,700],["Bao bột đá Trung Hải Tôm càng long xanh lá K45*69(55)  dán đáy",0,8725,8050,675],["Bao bột đá Trung Hải THNA-06 K45*69 (55) dán đáy",400,0,0,400],["Bao bột đá Trung Hải CHEMICO Hồng K45*70(56) dán đáy",0,17820,17420,400],["Bao bột đá Trung Hải Tôm càng long hồng CT K45*69(55)  dán đáy",0,7268,6900,368],["Bao bột đá Trung Hải THNA- 01 K50*96 (80) van",0,2110,5000,310],["Bao bột đá Trung Hải Không in K50*94 (80) dán đáy 2 đầu",300,8000,8000,300],["Bao bột đá Trung Hải THNA- 01T K50*82 (76) Hàng phủ",330,1085,1115,300],["Bao bột đá Trung Hải Tôm càng long vàng K45*69(55)  dán đáy",0,8400,8100,300],["Bao bột đá Trung Hải NSMK- 400 K48*86(70) van -cam 25kg",0,2531,2245,286],["Bao bột đá Trung Hải BA- 45 K48*86(70) van",0,2495,2245,250],["Bao bột đá Trung Hải VLC -1500C  K50*74",0,1315,1115,200],["Bao bột đá Trung Hải NSMK- 400 K55*99(83) van viền cam",0,3000,2820,180],["Bao bột đá Trung Hải tôm vàng HANA  K45*69(55) Dán đáy",0,1146,1000,146],["Bao bột đá Trung Hải GRADE- 800 K45*70(55) dán đáy",130,0,0,130],["Bao bột đá Trung Hải  Tôm vàng cam hanna K45*69(55) dán đáy",0,5250,5120,130],["Bao bột đá Trung Hải tôm Hồng HANA  K45*69(55) Dán đáy",0,840,740,100],["Bao bột đá Trung Hải THNA- 01 K50*76",0,100,0,100],["Bao bột đá Trung Hải 3H-07 K50*88(74) dán đáy",0,23140,23050,90],["Bao bột đá Trung Hải viền đen   K50*91(77) Dán đáy",0,14765,14700,65],["Bao bột đá Trung Hải LGEC -400 K55*98(83) van",0,500,450,50],["Bao bột đá Trung Hải Không in K50*76  dán đáy 2 đầu",3400,1600,5000,0],["Bao bột đá Trung Hải PRI-2TC Lot 2672302 K52*87 Có PE",900,0,900,0],["Bao bột đá Trung Hải SMKC-400 bao 50kg K55*99(83) Van",700,18718,19418,0],["Bao bột đá Trung Hải KY-661 K52*85-82",1600,0,1600,0],["Bao bột đá Trung Hải KY-665 K50*85-82",4400,0,4400,0],["Bao bột đá Trung Hải 208 T K50*74 HP",0,470,470,0],["Bao bột đá Trung Hải THAN-01 K50*88(72) van",0,1115,1115,0],["Bao bột đá Trung Hải THAN CPPL-1C Hàng phủ",0,1082,1082,0],["Bao bột đá Trung Hải THNA-01 K50*96(80) van",0,5000,5000,0],["Bao bột đá Trung Hải PG- 05 K48*84(68) van loại 16.5kg",0,4300,4300,0],["Bao bột đá Trung HảiTHNA-03 UCT K50*86(70)  Van",0,5000,5000,0],["Bao bột đá Trung Hải ZAR -01C  K50*82 HP",0,1122,1122,0],["Bao bột đá Trung Hải ZAR -02C  K50*78 HP",0,1122,1122,0],["Bao bột đá Trung Hải Tôm Hồng CT K48*74",0,4000,4000,0],["Bao bột đá Trung Hải THNA- 01 K50*96 (80) VAN",0,7730,7730,0],["Bao bột đá Trung VM - 1 A PLUS  K50*86(70)   VAN",0,2245,2245,0],["Bao bột đá Trung Hải Tôm càng long CT K45*69(55)  dán đáy",0,8390,8390,0],["Bao bột đá Trung Hải Tôm càng long cam K45*69(55)  dán đáy",0,8372,8372,0],["Bao bột đá Trung Hải  TIRU 03 K50*74 Hàng phủ",0,1123,1123,0],["Bao bột đá Trung Hải  THAN-02T K50*82 Hàng phủ",0,11404,11404,0],["Bao bột đá Trung Hải WG-57 K50*88 (72) van",0,3370,3370,0],["Bao bột đá Trung Hải WG-7 K50*86 (70) van",0,3370,3370,0],["Bao bột đá Trung Hải Tôm càng long cam K48*74",0,100,100,0],["Bao bột đá Trung Hải Tôm càng long vàng K48*74",0,100,100,0],["Bao bột đá Trung Hải Tôm càng long xanh lá K48*74",0,100,100,0],["Bao bột đá Trung Hải Tôm càng long hồng CT K48*74",0,100,100,0],["Bao bột đá Trung Hải DBCARB SUPER 1CX K50*85(82) có PE",0,1565,1265,0],["Bao bột đá Trung Hải DBCARB SUPER 2C K50*85(82) có PE",0,1083,1083,0],["Bao bột đá Trung Hải DBCARB SUPER 3C K50*85(82) có PE",0,1083,1083,0],["Bao bột đá Trung Hải VLC-1500S K50*86 (70) van",0,3310,3310,0],["Bao bột đá Trung Hải VLC-1500 K50*86 (70) van",0,1103,1103,0],["Bao bột đá Trung Hải VLC-1500C K50*74 Hàng phủ",0,1103,1103,0],["Bao bột đá Trung Hải AB-10 K50*88 (72) van",0,8990,8990,0],["Bao bột đá Trung Hải C1 K50*74 Hàng phủ",0,2250,2250,0],["Bao bột đá Trung Hải JV 1 K50*95 (79) van dùng manh K52",0,1123,1123,0],["Bao bột đá Trung Hải JV 5 K50*88 (72) van dùng manh K52",0,4495,4495,0],["Bao bột đá Trung Hải U 15 K50*89 (73) van",0,1125,1125,0],["Bao bột đá Trung Hải DC- 03 K50*86 (70) van",0,6630,6630,0],["Bao bột đá Trung Hải OCU2 K50*83(80)",0,4650,4650,0],["Bao bột đá Trung Hải KC-1 K50*85(82)",0,1105,1105,0],["Bao bột đá Trung Hải VCL SUPER-Canximax  K45*69(55)  dán đáy",0,12500,12500,0],["Bao bột đá Trung Hải Thiên kim SUPER-Canximax -100 + K45*69(55)  dán đ",0,4120,4120,0],["Bao bột đá Trung Hải KC-15 K52*78(74)",0,2245,2245,0],["Bao bột đá Trung Hải Tôm hồng hana K45*69(55) dán đáy",0,5380,5380,0],["Bao bột đá Trung Hải MS-6A K50*85(69) van",0,4450,4450,0],["Bao bột đá Trung Hải THNA-02 K50*88(72) van",0,2245,2245,0],["Bao bột đá Trung Hải HH-600 K48*86(70) van",0,3365,3365,0],["Bao bột đá Trung Hải KC-2 K52*84(80)",0,2245,2245,0],["Bao bột đá Trung Hải bao trắng không in K50*94(80) dán đáy",0,3400,3400,0],["Bao bột đá Trung Hải PG- 05 K48*84(68) van ( xuất N3/1 âm)",756,9244,10000,0],["Bao bột đá Trung Hải tôm CHEMICO hồng K48*74 (70)",0,100,100,0],["Bao bột đá Trung Hải SK 15 K50*88 (72) van",0,11250,11250,0],["Bao bột đá Trung Hải tôm cam ĐST K50*86(70) van",0,4010,4010,0],["Bao bột đá Trung Hải tôm cam ĐST K48*74(70)",0,2920,2920,0],["Bao bột đá Trung Hải THAN-01T  K50*79(76) Có Pe",0,4500,4500,0],["Bao bột đá Trung Hải CARB-111 K50*96(86) van",0,2205,2205,0],["Bao bột đá Trung Hải CARB-222 K50*95(79) van",0,2205,2205,0],["Bao bột đá Trung Hải RA -02  K55*102(86) van",0,2200,2200,0],["Bao bột đá Trung Hải ST -37  K55*86(70) van",0,4000,4000,0],["Bao bột đá Trung Hải Tôm càng long hồng CT K48*70",0,100,100,0],["Bao bột đá Trung Hải THNA-02T K50*82 Hàng phủ",0,750,750,0],["Bao bột đá Trung Hải tôm vàng Hằng Quang K50*86(70) van",0,200,200,0],["Bao bột đá Trung Hải tôm vàng Hằng Quang K50*78(74)",0,100,100,0],["Bao bột đá Trung Hải D 05 K50*86(70) van",0,4340,4340,0],["Bao bột đá Trung Hải PG- 03 K50*87(71) van",0,5420,5420,0],["Bao bột đá Trung Hải Tôm càng long đỏ K45*69(55) Dán đáy",0,3000,3000,0],["Bao bột đá Trung Hải OP 3 K50*88(72) van",0,8985,8985,0],["Bao bột đá Trung Hải OP2  K50*77(74)",0,1122,1122,0],["Bao bột đá Trung Hải AJ 2 K50*86(70) Van",0,3375,3375,0],["Bao bột đá Trung Hải AJ 2+ K50*86(70) Van",0,2245,2245,0],["Bao bột đá Trung Hải THNA- 03 K50*85(82)",0,7570,7570,0],["Bao bột đá Trung Hải Tôm càng long đỏ K48*73(70)",0,50,50,0],["Bao bột đá Trung Hải Tôm càng long vàng K48*73(70)",0,20,20,0],["Bao bột đá Trung Hải Tôm càng long hồng K48*73(70)",0,20,20,0],["Bao bột đá Trung Hải Tôm càng long xanh lá K48*73(70)",0,20,20,0],["Bao bột đá Trung Hải Tôm càng long vàng  K45*69(55) Dán đáy",0,2155,2155,0],["Bao bột đá Trung Hải Tôm càng long hồng K45*69(55) Dán đáy",0,4200,4200,0],["Bao bột đá Trung Hải Tôm càng long xanh lá K45*69(55) Dán đáy",0,2176,2176,0],["Bao bột đá Trung Hải THNA-02 K50*85(82)",0,21620,21620,0],["Bao bột đá Trung Hải THNA-02 tím K55*96(80) van",0,4020,4020,0],["Bao bột đá Trung Hải GC- 30 K50*86(70) van",0,7870,7870,0],["Bao bột đá Trung Hải RA 02 K55*102(86) van",0,2200,2200,0],["Bao bột đá Trung Hải BA- 35 K55*104(88) van",0,5700,5700,0],["Bao bột đá Trung Hải  TRUST 02 K50*76 HP",0,2245,2245,0],["Bao bột đá Trung Hải THNA-02 K50*86(70) van",0,4500,4500,0],["Bao bột đá Trung Hải CALCIUM CARBONATE K50*74 hàng phủ",0,2245,2245,0],["Bao gạo An Phát mã Bát Cơm K50*72 ( manh dệt Th50) in mặt 2",0,2070,2070,0],["Bao bột đá Trung Hải SMKC -1000 K58*104(88) van viền xanh lá",0,565,565,0],["Bao bột đá Trung Hải SM 700 K50*86(70) van",0,5620,5620,0],["Bao bột đá Trung Hải THNA- 01 lot THNA91000 K50*96(80) van",0,1103,1103,0],["Bao bột đá Trung Hải KB1 lotno 006KB0326 K50*95(79) van",0,5520,5520,0],["Bao bột đá Trung Hải KB1H lotno 006KB0326 K50*93(77) van",0,1105,1105,0],["Bao bột đá Trung Hải AT- 8 K50*78(74)",0,3370,3370,0],["Bao bột đá Trung Hải NATURAL CALCITE POWDER Superlite XW K55*86(82)",0,802,802,0],["Bao bột đá Trung Hải COATER CALCIUM CARBONATE Superlite XW-C K55*86(82",0,200,200,0],["Bao bột đá Trung Hải DBCAL 1CX K52*84(80) có PE",0,1082,1082,0],["Bao bột đá Trung Hải THNA- 01 HP K50*80",0,1123,1123,0],["Bao bột đá Trung Hải SI -01T K50*76",0,111,111,0],["Bao bột đá Trung Hải SI -02T K50*76",0,206,206,0],["Bao bột đá Trung Hải  PRI -2TC K50-89-86 có PE",0,7200,7200,0],["Bao bột đá Trung Hải THNA- 06 K50*92-76 VAN",0,4490,4490,0],["Bao bột đá Trung Hải THNA- 03 K50*86(70) van",0,5300,5300,0],["Bao bột đá Trung Hải THNA- 01 UTC K50*94-78 van",0,4495,4495,0],["Bao bột đá Trung Hải CARB-103 K50*86(70) van",0,3310,3310,0],["Bao bột đá Trung Hải RA -03 K50*102-86 van",0,1102,1102,0],["Bao bột đá Trung Hải KC-15 K50*77(74)",0,3365,3365,0],["Bao bột đá Trung Hải KC-12 K50*83(80)",0,4490,4490,0],["Bao bột đá Trung Hải WG -7 K50*86-70  van",0,3370,3370,0],["Bao bột đá Trung Hải THNA- 01T Lot TH2671100 HP K50*83(76)",0,578,578,0],["Bao bột đá Trung Hải CHEMICO hồng K45*69(55) dán đáy",0,3900,3900,0],["Bao bột đá Trung Hải PG-06  K50*86(70) van",0,1082,1082,0],["Bao bột đá Trung Hải WG 57  K50*88(72) van",0,6750,6750,0],["Bao bột đá Trung Hải PPI-04 K50*88-72  van",0,4500,4500,0],["Bao bột đá Trung Hải VLC -1500 S K50*86-70  van",0,2205,2205,0],["Bao bột đá Trung Hải VLC -1500  K50*86-70  van",0,1105,1105,0],["Bao bột đá Trung Hải  HICARB-S K50*77(74) có PE",0,3370,3370,0],["Bao bột đá Trung Hải  HICARB-SI K50*79(76) có PE",0,2245,2245,0]],"hat_pp":[["Hạt PP nội địa",66539,33590,46646,53483],["Hạt PP tái sinh",47360,46503,59478,34385],["Hạt PP Lohia D920 (Ấn Độ)",46805,46342,79495,13652],["Hạt PP Hengly (Hàn Quốc)",51296,49480,89495,11281]],"hat_pe":[["Hạt PE thổi màng",9663,20554,19196,11021],["Hạt PE lồng bao/túi",18837,10707,18994,10550]],"giay_kraft":[["Giấy Kraft Bãi Bằng",32178,48627,50974,29831],["Giấy Kraft Long Sơn",33140,27737,48072,12805],["Giấy Kraft Malaysia",20682,29550,39088,11144]],"phu_lieu":[["Màng OPP",3713,5574,3403,5884],["Chỉ may",4956,5669,5988,4637],["Keo/băng dính",3895,4793,5429,3259],["Mực in",3636,4975,5995,2616]]}};
+var DAYS=D.days;
+var CI={},CUR='ov';
+var COL={primary:'#2563eb',secondary:'#0891b2',accent:'#7c3aed',success:'#16a34a',warning:'#d97706',danger:'#dc2626',muted:'#64748b'};
+var GROUP={manh_det:{name:'Manh dệt',unit:'m'},manh_trang:{name:'Manh tráng',unit:'m'},tp_xm:{name:'TP xi măng',unit:'cái'},tp_khac:{name:'TP khác',unit:'cái'}};
+function dlabel(d){return d==='31'?'31/01':d+'/02';}
+function fmt(v){return Math.round(v).toLocaleString('vi-VN');}
+function fmtK(v){var a=Math.abs(v);if(a>=1e6)return (v/1e6).toFixed(1)+'M';if(a>=1e3)return (v/1e3).toFixed(0)+'k';return Math.round(v);}
+function el(id){return document.getElementById(id);}
+function chart(id){if(!CI[id])CI[id]=echarts.init(el(id));return CI[id];}
+var base={backgroundColor:'transparent',textStyle:{fontFamily:'Inter',color:'#64748b'},
+  legend:{textStyle:{color:'#64748b'},bottom:0,itemWidth:12,itemHeight:8,icon:'roundRect'},
+  tooltip:{trigger:'axis',backgroundColor:'#ffffff',borderColor:'#e2e8f0',borderWidth:1,textStyle:{color:'#1e293b'},extraCssText:'box-shadow:0 4px 16px rgba(15,23,42,0.12);border-radius:8px;'},
+  grid:{top:'12%',left:'3%',right:'4%',bottom:'16%',containLabel:true}};
+function clone(){return JSON.parse(JSON.stringify(base));}
+var AX={axisLine:{lineStyle:{color:'#cbd5e1'}},axisLabel:{color:'#64748b'},splitLine:{lineStyle:{color:'#eef2f7'}}};
+
+/* ---- filters ---- */
+function activeDays(){
+  var f=el('fFrom').value,t=el('fTo').value;
+  var i1=DAYS.indexOf(f),i2=DAYS.indexOf(t);
+  if(i1<0)i1=0;if(i2<0)i2=DAYS.length-1;if(i1>i2){var x=i1;i1=i2;i2=x;}
+  return DAYS.slice(i1,i2+1);
+}
+function typeFilter(){var v=el('fType').value;return v.indexOf('nl:')===0?'':v;} // tk-scope only
+function nlType(){var v=el('fType').value;return v.indexOf('nl:')===0?v.slice(3):'';}
+function periodAgg(g,ad){ad=ad||activeDays();var first=D.tk[ad[0]][g],last=D.tk[ad[ad.length-1]][g];var nhap=0,xuat=0;ad.forEach(function(d){nhap+=D.tk[d][g][1];xuat+=D.tk[d][g][2];});return {open:first[0],nhap:nhap,xuat:xuat,close:last[3]};}
+
+/* ---- combo XNT ---- */
+function comboXNT(id,g){
+  var ad=activeDays(),u=GROUP[g].unit;var o=clone();
+  o.tooltip.valueFormatter=function(v){return fmt(v)+' '+u;};
+  o.xAxis=Object.assign({type:'category',data:ad.map(dlabel)},AX,{splitLine:{show:false}});
+  o.yAxis=[Object.assign({type:'value',name:'Nhập/Xuất'},AX,{axisLabel:{formatter:fmtK,color:'#64748b'}}),Object.assign({type:'value',name:'Tồn',position:'right'},AX,{splitLine:{show:false},axisLabel:{formatter:fmtK,color:'#64748b'}})];
+  o.series=[
+    {name:'Nhập',type:'bar',data:ad.map(function(d){return D.tk[d][g][1];}),itemStyle:{color:COL.success,borderRadius:[3,3,0,0]},barMaxWidth:16},
+    {name:'Xuất',type:'bar',data:ad.map(function(d){return D.tk[d][g][2];}),itemStyle:{color:COL.danger,borderRadius:[3,3,0,0]},barMaxWidth:16},
+    {name:'Tồn cuối',type:'line',yAxisIndex:1,data:ad.map(function(d){return D.tk[d][g][3];}),smooth:true,symbol:'circle',symbolSize:5,lineStyle:{width:3,color:COL.primary},itemStyle:{color:COL.primary},areaStyle:{opacity:0.06,color:COL.primary}}
+  ];
+  chart(id).setOption(o,true);
+}
+
+/* ---- KPI helper ---- */
+function kpi(label,val,unit,trend,tcol){return '<div class="card kpi-card" style="border-left-color:'+(tcol||COL.primary)+'"><span class="kpi-label">'+label+'</span><span class="kpi-value">'+val+' <small>'+unit+'</small></span><div class="kpi-trend" style="color:'+(trend?trend.c:COL.muted)+'">'+(trend?trend.t:'')+'</div></div>';}
+
+/* ---- OVERVIEW ---- */
+function drawOv(){
+  var ad=activeDays();
+  var md=periodAgg('manh_det',ad),mt=periodAgg('manh_trang',ad),xm=periodAgg('tp_xm',ad),tk=periodAgg('tp_khac',ad);
+  var tpClose=xm.close+tk.close;
+  var soi=0;ad.forEach(function(d){soi+=D.bcn[d]['Sợi'][0];});
+  var h='';
+  h+=kpi('Tồn cuối · Manh dệt',fmt(md.close),'m',{t:(md.close>=md.open?'▲':'▼')+' '+fmt(Math.abs(md.close-md.open))+' m',c:md.close>=md.open?COL.success:COL.danger},COL.primary);
+  h+=kpi('Tồn cuối · Manh tráng',fmt(mt.close),'m',{t:(mt.close>=mt.open?'▲':'▼')+' '+fmt(Math.abs(mt.close-mt.open))+' m',c:mt.close>=mt.open?COL.success:COL.danger},COL.secondary);
+  h+=kpi('Tồn cuối · Thành phẩm',fmt(tpClose),'cái',{t:'Nhập '+fmtK(xm.nhap+tk.nhap)+' · Xuất '+fmtK(xm.xuat+tk.xuat),c:COL.muted},COL.accent);
+  h+=kpi('Sợi đầu vào (kỳ)',fmt(soi),'Kg',{t:'công đoạn đầu chuỗi',c:COL.muted},COL.warning);
+  el('kpiOv').innerHTML=h;
+  var t=typeFilter()||'manh_det';
+  el('c1Title').textContent='Nhập – Xuất – Tồn theo ngày — '+GROUP[t].name+' ('+GROUP[t].unit+')';
+  comboXNT('c1',t);
+  drawC2(ad);
+  drawTbl(ad);
+}
+function drawC2(ad){
+  var o=clone();var tf=typeFilter();
+  var groups=[['manh_det','Manh dệt',COL.primary],['manh_trang','Manh tráng',COL.secondary],['tp_xm','TP xi măng',COL.accent],['tp_khac','TP khác',COL.warning]];
+  o.xAxis=Object.assign({type:'category',data:ad.map(dlabel)},AX,{splitLine:{show:false},axisLabel:{color:'#64748b',fontSize:9}});
+  o.yAxis=Object.assign({type:'value'},AX,{axisLabel:{formatter:'{value}%',color:'#64748b'}});
+  o.legend.data=groups.map(function(g){return g[1];});
+  o.tooltip.valueFormatter=function(v){return v+'%';};
+  o.series=groups.map(function(g){var base0=D.tk[ad[0]][g[0]][0]||1;var dim=tf&&tf!==g[0];return {name:g[1],type:'line',data:ad.map(function(d){return Math.round(D.tk[d][g[0]][3]/base0*100);}),smooth:true,symbol:'none',lineStyle:{width:dim?1:2.5,color:g[2],opacity:dim?0.25:1},itemStyle:{color:g[2]}};});
+  chart('c2').setOption(o,true);
+}
+function drawTbl(ad){
+  var rows=[['manh_det','Manh dệt','m'],['manh_trang','Manh tráng','m'],['tp_xm','Thành phẩm xi măng','cái'],['tp_khac','Thành phẩm khác','cái']];
+  var tf=typeFilter();
+  var html=rows.map(function(r){var a=periodAgg(r[0],ad);var delta=a.close-a.open;var dc=delta>=0?COL.success:COL.danger;var op=tf&&tf!==r[0]?'opacity:.4':'';return '<tr style="'+op+'"><td>'+r[1]+'</td><td style="color:var(--text-muted)"><span class="utag">'+r[2]+'</span></td><td>'+fmt(a.open)+'</td><td style="color:'+COL.success+'">'+fmt(a.nhap)+'</td><td style="color:'+COL.danger+'">'+fmt(a.xuat)+'</td><td style="color:'+COL.primary+';font-weight:700">'+fmt(a.close)+'</td><td style="color:'+dc+'">'+(delta>=0?'+':'')+fmt(delta)+'</td></tr>';}).join('');
+  el('tbl1').innerHTML=html;
+}
+
+/* ---- detail: bảng cây (nhóm = 1 hàng đủ cột → xổ ra loại con) ---- */
+function detailCard(pfx,unit){
+  return '<div class="card col-12"><div class="chart-head"><span class="chart-title">Chi tiết tồn kho từng loại — cả kỳ (01–28/02) · ĐVT '+unit+'</span>'
+    +'<input class="det-search" placeholder="Tìm loại…" oninput="detSearch(\''+pfx+'\')" id="'+pfx+'search"></div>'
+    +'<div class="det-wrap"><table class="dt"><thead><tr><th>Loại / Nhóm</th><th>Tồn đầu</th><th>Nhập</th><th>Xuất</th><th>Tồn cuối</th><th>Biến động</th></tr></thead>'
+    +'<tbody id="'+pfx+'det"></tbody></table></div></div>';
+}
+function dcell(o,ni,xu,cl){var d=cl-o;return '<td>'+fmt(o)+'</td><td style="color:'+COL.success+'">'+fmt(ni)+'</td><td style="color:'+COL.danger+'">'+fmt(xu)+'</td><td style="color:'+COL.primary+';font-weight:700">'+fmt(cl)+'</td><td style="color:'+(d>=0?COL.success:COL.danger)+'">'+(d>=0?'+':'')+fmt(d)+'</td>';}
+function renderDetail(pfx,gs,filterCat){
+  var body=el(pfx+'det');if(!body)return;
+  var use=gs.filter(function(g){return !filterCat||filterCat===g[0];});
+  var html='';
+  use.forEach(function(g){
+    var cat=g[0];var rows=(D.detail&&D.detail[cat])||[];var key=pfx+'-'+cat;
+    var o=0,ni=0,xu=0,cl=0;rows.forEach(function(r){o+=r[1];ni+=r[2];xu+=r[3];cl+=r[4];});
+    html+='<tr class="lv0" onclick="detToggle(\''+key+'\')"><td><span class="caret" id="cr-'+key+'">\u25B8</span> '+g[1]+' <span style="color:var(--text-muted);font-weight:400;font-size:.72rem">'+rows.length+' loại</span></td>'+dcell(o,ni,xu,cl)+'</tr>';
+    rows.forEach(function(r){html+='<tr class="lv1 ch-'+key+'" data-nm="'+r[0].toLowerCase().replace(/"/g,'')+'" style="display:none"><td>'+r[0]+'</td>'+dcell(r[1],r[2],r[3],r[4])+'</tr>';});
+  });
+  body.innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:14px">Không có dữ liệu.</td></tr>';
+  if(filterCat)detOpen(pfx+'-'+filterCat,true);
+}
+function detOpen(key,open){var rows=document.querySelectorAll('.ch-'+key);for(var i=0;i<rows.length;i++)rows[i].style.display=open?'table-row':'none';var cr=el('cr-'+key);if(cr)cr.textContent=open?'\u25BE':'\u25B8';}
+function detToggle(key){var cr=el('cr-'+key);var open=cr&&cr.textContent==='\u25BE';detOpen(key,!open);}
+function detSearch(pfx){
+  var q=el(pfx+'search').value.toLowerCase().trim();var body=el(pfx+'det');if(!body)return;
+  var l1=body.querySelectorAll('tr.lv1');var grp={};
+  for(var i=0;i<l1.length;i++){var nm=l1[i].getAttribute('data-nm')||'';var m=l1[i].className.match(/ch-([^\s]+)/);var key=m?m[1]:'';if(!(key in grp))grp[key]=0;var ok=!!q&&nm.indexOf(q)>=0;l1[i].style.display=ok?'table-row':'none';if(ok)grp[key]++;}
+  for(var k in grp){var cr=el('cr-'+k);if(cr)cr.textContent=(q&&grp[k]>0)?'\u25BE':'\u25B8';}
+}
+
+/* ---- TIER page builder (TP / BTP) ---- */
+function drawTier(which){
+  var ad=activeDays(),tf=typeFilter();
+  var cfg=which==='tp'
+    ? {gs:[['tp_xm','Thành phẩm xi măng'],['tp_khac','Thành phẩm khác']],unit:'cái',kpiBox:'kpiTp',gridBox:'tpGrid',pfx:'ctp'}
+    : {gs:[['manh_det','Manh dệt'],['manh_trang','Manh tráng']],unit:'m',kpiBox:'kpiBtp',gridBox:'btpGrid',pfx:'cbtp'};
+  // respect type filter if it belongs to this tier
+  var gs=cfg.gs.filter(function(g){return !tf||tf===g[0];});
+  if(gs.length===0)gs=cfg.gs;
+  // KPI
+  var a0=periodAgg(cfg.gs[0][0],ad),a1=periodAgg(cfg.gs[1][0],ad);
+  var h='';
+  h+=kpi('Tồn cuối · '+cfg.gs[0][1],fmt(a0.close),cfg.unit,{t:'Nhập '+fmtK(a0.nhap)+' · Xuất '+fmtK(a0.xuat),c:COL.muted},COL.primary);
+  h+=kpi('Tồn cuối · '+cfg.gs[1][1],fmt(a1.close),cfg.unit,{t:'Nhập '+fmtK(a1.nhap)+' · Xuất '+fmtK(a1.xuat),c:COL.muted},COL.accent);
+  h+=kpi('Tổng nhập (kỳ)',fmt(a0.nhap+a1.nhap),cfg.unit,{t:which==='tp'?'từ SX hoàn thiện':'từ sản xuất',c:COL.success},COL.success);
+  h+=kpi('Tổng xuất (kỳ)',fmt(a0.xuat+a1.xuat),cfg.unit,{t:which==='tp'?'giao khách':'sang công đoạn sau',c:COL.danger},COL.danger);
+  el(cfg.kpiBox).innerHTML=h;
+  // grid: one combo per (filtered) group + a compare chart
+  var gridHtml='';
+  gs.forEach(function(g,i){gridHtml+='<div class="card chart-card col-'+(gs.length===1?12:6)+'"><div class="chart-head"><span class="chart-title">'+g[1]+' — Nhập/Xuất/Tồn ('+cfg.unit+')</span></div><div id="'+cfg.pfx+i+'" class="chart-c"></div></div>';});
+  gridHtml+='<div class="card chart-card col-8"><div class="chart-head"><span class="chart-title">Tồn cuối ngày theo nhóm ('+cfg.unit+')</span></div><div id="'+cfg.pfx+'cmp" class="chart-c sm"></div></div>';
+  gridHtml+='<div class="card chart-card col-4"><div class="chart-head"><span class="chart-title">Nhập vs Xuất cả kỳ ('+cfg.unit+')</span></div><div id="'+cfg.pfx+'nx" class="chart-c sm"></div></div>';
+  gridHtml+=detailCard(cfg.pfx,cfg.unit);
+  el(cfg.gridBox).innerHTML=gridHtml;
+  renderDetail(cfg.pfx,cfg.gs,tf);
+  gs.forEach(function(g,i){comboXNT(cfg.pfx+i,g[0]);});
+  // compare tồn cuối
+  var o=clone();o.tooltip.valueFormatter=function(v){return fmt(v)+' '+cfg.unit;};
+  o.xAxis=Object.assign({type:'category',data:ad.map(dlabel)},AX,{splitLine:{show:false},axisLabel:{color:'#64748b',fontSize:9}});
+  o.yAxis=Object.assign({type:'value'},AX,{axisLabel:{formatter:fmtK,color:'#64748b'}});
+  o.legend.data=cfg.gs.map(function(g){return g[1];});
+  var cols=[COL.primary,COL.accent];
+  o.series=cfg.gs.map(function(g,i){return {name:g[1],type:'line',data:ad.map(function(d){return D.tk[d][g[0]][3];}),smooth:true,symbol:'none',lineStyle:{width:3,color:cols[i]},areaStyle:{opacity:0.06,color:cols[i]}};});
+  chart(cfg.pfx+'cmp').setOption(o,true);
+  // nhập vs xuất
+  var o2=clone();o2.tooltip.trigger='axis';o2.tooltip.valueFormatter=function(v){return fmt(v)+' '+cfg.unit;};
+  o2.xAxis=Object.assign({type:'category',data:cfg.gs.map(function(g){return g[1];})},AX);
+  o2.yAxis=Object.assign({type:'value'},AX,{axisLabel:{formatter:fmtK,color:'#64748b'}});
+  o2.legend.data=['Nhập','Xuất'];
+  o2.series=[{name:'Nhập',type:'bar',data:[a0.nhap,a1.nhap],itemStyle:{color:COL.success,borderRadius:[4,4,0,0]},barMaxWidth:38},{name:'Xuất',type:'bar',data:[a0.xuat,a1.xuat],itemStyle:{color:COL.danger,borderRadius:[4,4,0,0]},barMaxWidth:38}];
+  chart(cfg.pfx+'nx').setOption(o2,true);
+}
+
+/* ---- NL (demo XNT nguyên liệu) ---- */
+function nlAgg(m,ad){ad=ad||activeDays();var f=D.nl[m][ad[0]],l=D.nl[m][ad[ad.length-1]];var nin=0,nout=0;ad.forEach(function(d){nin+=D.nl[m][d][1];nout+=D.nl[m][d][2];});return {open:f[0],nhap:nin,xuat:nout,close:l[3]};}
+function comboXNTnl(id,m){
+  var ad=activeDays(),u=D.nl_meta[m].unit;var o=clone();
+  o.tooltip.valueFormatter=function(v){return fmt(v)+' '+u;};
+  o.xAxis=Object.assign({type:'category',data:ad.map(dlabel)},AX,{splitLine:{show:false}});
+  o.yAxis=[Object.assign({type:'value',name:'Nhập/Xuất'},AX,{axisLabel:{formatter:fmtK,color:'#64748b'}}),Object.assign({type:'value',name:'Tồn',position:'right'},AX,{splitLine:{show:false},axisLabel:{formatter:fmtK,color:'#64748b'}})];
+  o.series=[
+    {name:'Nhập',type:'bar',data:ad.map(function(d){return D.nl[m][d][1];}),itemStyle:{color:COL.success,borderRadius:[3,3,0,0]},barMaxWidth:16},
+    {name:'Xuất',type:'bar',data:ad.map(function(d){return D.nl[m][d][2];}),itemStyle:{color:COL.danger,borderRadius:[3,3,0,0]},barMaxWidth:16},
+    {name:'Tồn cuối',type:'line',yAxisIndex:1,data:ad.map(function(d){return D.nl[m][d][3];}),smooth:true,symbol:'circle',symbolSize:5,lineStyle:{width:3,color:COL.primary},itemStyle:{color:COL.primary},areaStyle:{opacity:0.06,color:COL.primary}}
+  ];
+  chart(id).setOption(o,true);
+}
+var nlSel='hat_pp';
+function nlPick(m){nlSel=m;['hat_pp','hat_pe','giay_kraft','phu_lieu'].forEach(function(k){var b=el('nlb-'+k);if(b)b.className='btn-seg'+(k===m?' on':'');});comboXNTnl('cnlMain',m);}
+function drawNl(){
+  var ad=activeDays(),sel=nlType();
+  var order=['hat_pp','hat_pe','giay_kraft','phu_lieu'];
+  var shown=sel?[sel]:order;
+  // KPI
+  var agg={};order.forEach(function(m){agg[m]=nlAgg(m,ad);});
+  var totIn=0,totOut=0;order.forEach(function(m){totIn+=agg[m].nhap;totOut+=agg[m].xuat;});
+  var h='';
+  h+=kpi('Tồn cuối · Hạt PP',fmt(agg.hat_pp.close),'Kg',{t:(agg.hat_pp.close>=agg.hat_pp.open?'▲':'▼')+' '+fmt(Math.abs(agg.hat_pp.close-agg.hat_pp.open))+' Kg',c:agg.hat_pp.close>=agg.hat_pp.open?COL.success:COL.danger},COL.primary);
+  h+=kpi('Tồn cuối · Giấy Kraft',fmt(agg.giay_kraft.close),'Kg',{t:'Nhập '+fmtK(agg.giay_kraft.nhap)+' · Xuất '+fmtK(agg.giay_kraft.xuat),c:COL.muted},COL.accent);
+  h+=kpi('Tổng nhập NVL (kỳ)',fmt(totIn),'Kg',{t:'mua về nhập kho',c:COL.success},COL.success);
+  h+=kpi('Tổng xuất NVL (kỳ)',fmt(totOut),'Kg',{t:'đưa vào sản xuất',c:COL.danger},COL.danger);
+  el('kpiNl').innerHTML=h;
+  // single combo + material selector buttons
+  if(sel)nlSel=sel; if(order.indexOf(nlSel)<0)nlSel='hat_pp';
+  var btns=order.map(function(m){return '<button class="btn-seg'+(m===nlSel?' on':'')+'" id="nlb-'+m+'" onclick="nlPick(\''+m+'\')">'+D.nl_meta[m].name+'</button>';}).join('');
+  var g='<div class="card chart-card col-12"><div class="chart-head"><span class="chart-title">Nhập – Xuất – Tồn theo loại nguyên liệu (Kg)</span><div class="btn-group">'+btns+'</div></div><div id="cnlMain" class="chart-c"></div></div>';
+  g+='<div class="card chart-card col-8"><div class="chart-head"><span class="chart-title">Tồn cuối ngày theo nhóm NVL (chuẩn hoá đầu kỳ = 100)</span></div><div id="cnlcmp" class="chart-c sm"></div></div>';
+  g+='<div class="card chart-card col-4"><div class="chart-head"><span class="chart-title">Nhập vs Xuất cả kỳ (Kg)</span></div><div id="cnlnx" class="chart-c sm"></div></div>';
+  g+=detailCard('cnl','Kg');
+  el('nlGrid').innerHTML=g;
+  comboXNTnl('cnlMain',nlSel);
+  renderDetail('cnl',[['hat_pp','Hạt nhựa PP'],['hat_pe','Hạt nhựa PE'],['giay_kraft','Giấy Kraft'],['phu_lieu','Màng OPP, mực, chỉ']],sel);
+  // compare normalized tồn cuối
+  var cols=[COL.primary,COL.secondary,COL.accent,COL.warning];
+  var o=clone();o.tooltip.valueFormatter=function(v){return v+'%';};
+  o.xAxis=Object.assign({type:'category',data:ad.map(dlabel)},AX,{splitLine:{show:false},axisLabel:{color:'#64748b',fontSize:9}});
+  o.yAxis=Object.assign({type:'value'},AX,{axisLabel:{formatter:'{value}%',color:'#64748b'}});
+  o.legend.data=order.map(function(m){return D.nl_meta[m].name;});
+  o.series=order.map(function(m,i){var b=D.nl[m][ad[0]][0]||1;var dim=sel&&sel!==m;return {name:D.nl_meta[m].name,type:'line',data:ad.map(function(d){return Math.round(D.nl[m][d][3]/b*100);}),smooth:true,symbol:'none',lineStyle:{width:dim?1:2.5,color:cols[i],opacity:dim?0.25:1},itemStyle:{color:cols[i]}};});
+  chart('cnlcmp').setOption(o,true);
+  // nhập vs xuất
+  var o2=clone();o2.tooltip.trigger='axis';o2.tooltip.valueFormatter=function(v){return fmt(v)+' Kg';};
+  o2.xAxis=Object.assign({type:'category',data:order.map(function(m){return D.nl_meta[m].name;}),axisLabel:{color:'#64748b',fontSize:9,interval:0,rotate:15}},AX);
+  o2.yAxis=Object.assign({type:'value'},AX,{axisLabel:{formatter:fmtK,color:'#64748b'}});
+  o2.legend.data=['Nhập','Xuất'];
+  o2.series=[{name:'Nhập',type:'bar',data:order.map(function(m){return agg[m].nhap;}),itemStyle:{color:COL.success,borderRadius:[4,4,0,0]},barMaxWidth:26},{name:'Xuất',type:'bar',data:order.map(function(m){return agg[m].xuat;}),itemStyle:{color:COL.danger,borderRadius:[4,4,0,0]},barMaxWidth:26}];
+  chart('cnlnx').setOption(o2,true);
+}
+
+/* ---- routing ---- */
+var TITLES={ov:['Tổng quan Xuất Nhập Tồn','Bán thành phẩm & thành phẩm · '],tp:['Thành phẩm','Bao xi măng & bao PP khác (cái) · '],btp:['Bán thành phẩm','Manh dệt & Manh tráng (mét) · '],nl:['Nguyên liệu','Hạt nhựa, giấy, phụ liệu (Kg) · số liệu demo · ']};
+function rangeTxt(){var ad=activeDays();return 'kỳ '+dlabel(ad[0])+' – '+dlabel(ad[ad.length-1]);}
+function drawPage(pid){
+  if(pid==='ov')drawOv();
+  else if(pid==='tp')drawTier('tp');
+  else if(pid==='btp')drawTier('btp');
+  else if(pid==='nl')drawNl();
+  el('psub').innerText=TITLES[pid][1]+rangeTxt();
+  setTimeout(function(){Object.values(CI).forEach(function(c){c.resize();});},40);
+}
+function onFilter(){drawPage(CUR);}
+document.querySelectorAll('.nav-link').forEach(function(l){l.addEventListener('click',function(){
+  var pid=this.getAttribute('data-page');CUR=pid;
+  document.querySelectorAll('.nav-link').forEach(function(x){x.classList.remove('active');});this.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(s){s.classList.remove('active');});el(pid).classList.add('active');
+  el('ptitle').innerText=TITLES[pid][0];
+  document.querySelector('.view').scrollTop=0;
+  drawPage(pid);
+});});
+function initFilters(){
+  var opt=DAYS.map(function(d){return '<option value="'+d+'">'+dlabel(d)+'</option>';}).join('');
+  el('fFrom').innerHTML=opt;el('fTo').innerHTML=opt;
+  el('fFrom').value='01';el('fTo').value='28';
+}
+function boot(){
+  if(typeof echarts==='undefined'){setTimeout(boot,60);return;}
+  initFilters();drawOv();el('psub').innerText=TITLES.ov[1]+rangeTxt();
+}
+boot();
+window.addEventListener('resize',function(){Object.values(CI).forEach(function(c){c.resize();});});
+</script>
+</body>
+</html>
