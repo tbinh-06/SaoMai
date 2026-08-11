@@ -115,9 +115,8 @@ table.dt tr:hover td{background:var(--bg-body)}
     <div class="logo"><div class="logo-icon">SM</div><div><div class="logo-text">Sao Mai</div><div class="logo-sub">Xuất Nhập Tồn · T02/2026</div></div></div>
     <nav class="nav">
       <div class="nav-cap">Báo cáo kho</div>
-      <a class="nav-link active" data-page="ov"><i>📊</i> Tổng quan</a>
-      <a class="nav-link" data-page="tp"><i>📦</i> Thành phẩm</a>
-      <a class="nav-link" data-page="btp"><i>🧵</i> Bán thành phẩm</a>
+      <a class="nav-link active" data-page="tra"><i>🔎</i> Tra cứu</a>
+      <a class="nav-link" data-page="kho"><i>📦</i> Kho thành phẩm & BTP</a>
       <a class="nav-link" data-page="nl"><i>⚗️</i> Nguyên liệu</a>
       <a class="nav-link" data-page="vt"><i>🛠️</i> Vật tư – Thiết bị</a>
     </nav>
@@ -148,38 +147,18 @@ table.dt tr:hover td{background:var(--bg-body)}
       </div>
     </header>
     <div class="view">
-      <section id="ov" class="page active">
-        <div class="card col-12" style="margin-bottom:20px">
+      <section id="tra" class="page active">
+        <div class="card col-12">
           <div class="chart-head"><span class="chart-title">🔎 Tra cứu tồn kho nhanh</span>
-            <input class="det-search" id="lookupBox" oninput="lookupFilter()" placeholder="Tìm tên hoặc mã (con lăn, KPK Long Sơn, Hạt PP...)" style="width:300px">
+            <input class="det-search" id="lookupBox" oninput="lookupFilter()" placeholder="Tìm tên hoặc mã (con lăn, KPK Long Sơn, Hạt PP...)" style="width:320px">
           </div>
-          <div class="det-wrap" style="max-height:340px"><table class="dt"><thead><tr><th>Tên / Mã</th><th style="text-align:left">Nhóm kho</th><th style="text-align:left">ĐVT</th><th>Tồn còn</th></tr></thead><tbody id="lookupBody"></tbody></table></div>
+          <div class="det-wrap" style="max-height:620px"><table class="dt"><thead><tr><th>Tên / Mã</th><th style="text-align:left">Nhóm kho</th><th style="text-align:left">ĐVT</th><th>Tồn còn</th></tr></thead><tbody id="lookupBody"></tbody></table></div>
           <div id="lookupCount" style="font-size:.72rem;color:var(--text-muted);margin-top:8px"></div>
         </div>
-        <div class="ov-h">📦 Tồn kho — tổng hợp</div>
-        <div class="kpi-row" id="kpiOv"></div>
-        <div class="grid" style="margin-bottom:24px">
-          <div class="card col-12"><div class="chart-head"><span class="chart-title">Tổng hợp Xuất – Nhập – Tồn theo nhóm</span></div>
-            <div class="tbl-wrap"><table class="dt"><thead><tr><th>Nhóm kho</th><th>ĐVT</th><th>Tồn đầu kỳ</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn cuối kỳ</th><th>Biến động</th></tr></thead><tbody id="tbl1"></tbody></table></div>
-          </div>
-        </div>
-        <div class="ov-h">🏭 Sản xuất — theo công đoạn & ca</div>
-        <div class="kpi-row" id="kpiSx"></div>
-        <div class="grid">
-          <div class="card chart-card col-8"><div class="chart-head"><span class="chart-title" id="sxTrendTitle">Sản lượng theo ngày</span><div class="btn-group" id="sxBtns"></div></div><div id="sxTrend" class="chart-c"></div></div>
-          <div class="card chart-card col-4"><div class="chart-head"><span class="chart-title" id="sxCaTitle">Cơ cấu theo ca</span></div><div id="sxCa" class="chart-c"></div></div>
-          <div class="card col-12"><div class="chart-head"><span class="chart-title">Báo cáo sản xuất theo ngày — từng công đoạn (như file BCN)</span><div class="fgroup"><label>Ngày</label><select id="sxDay" onchange="drawSxTable()"></select></div></div>
-            <div class="tbl-wrap"><table class="dt"><thead><tr><th>Công đoạn</th><th style="text-align:left">ĐVT</th><th>Ca I</th><th>Ca II</th><th>Ca III</th><th>Tổng SL</th><th>Lũy kế tháng</th></tr></thead><tbody id="sxDayBody"></tbody></table></div>
-          </div>
-        </div>
       </section>
-      <section id="tp" class="page">
-        <div class="kpi-row" id="kpiTp"></div>
-        <div class="grid" id="tpGrid"></div>
-      </section>
-      <section id="btp" class="page">
-        <div class="kpi-row" id="kpiBtp"></div>
-        <div class="grid" id="btpGrid"></div>
+      <section id="kho" class="page">
+        <div class="kpi-row" id="kpiKho"></div>
+        <div class="grid" id="khoGrid"></div>
       </section>
       <section id="nl" class="page">
         <div class="kpi-row" id="kpiNl"></div>
@@ -246,21 +225,9 @@ function comboXNT(id,g){
 function kpi(label,val,unit,trend,tcol){return '<div class="card kpi-card" style="border-left-color:'+(tcol||COL.primary)+'"><span class="kpi-label">'+label+'</span><span class="kpi-value">'+val+' <small>'+unit+'</small></span><div class="kpi-trend" style="color:'+(trend?trend.c:COL.muted)+'">'+(trend?trend.t:'')+'</div></div>';}
 
 /* ---- OVERVIEW ---- */
-function drawOv(){
-  var ad=activeDays();
+function drawTra(){
   if(!LOOKUP.length)buildLookup();
   renderLookupTable();lookupFilter();
-  var md=periodAgg('manh_det',ad),mt=periodAgg('manh_trang',ad),xm=periodAgg('tp_xm',ad),tk=periodAgg('tp_khac',ad);
-  var tpClose=xm.close+tk.close;
-  var soi=0;ad.forEach(function(d){soi+=D.bcn[d]['Sợi'][0];});
-  var h='';
-  h+=kpi('Tồn cuối · Manh dệt',fmt(md.close),'m',{t:(md.close>=md.open?'▲':'▼')+' '+fmt(Math.abs(md.close-md.open))+' m',c:md.close>=md.open?COL.success:COL.danger},COL.primary);
-  h+=kpi('Tồn cuối · Manh tráng',fmt(mt.close),'m',{t:(mt.close>=mt.open?'▲':'▼')+' '+fmt(Math.abs(mt.close-mt.open))+' m',c:mt.close>=mt.open?COL.success:COL.danger},COL.secondary);
-  h+=kpi('Tồn cuối · Thành phẩm',fmt(tpClose),'cái',{t:'Nhập '+fmtK(xm.nhap+tk.nhap)+' · Xuất '+fmtK(xm.xuat+tk.xuat),c:COL.muted},COL.accent);
-  h+=kpi('Sợi đầu vào (kỳ)',fmt(soi),'Kg',{t:'công đoạn đầu chuỗi',c:COL.muted},COL.warning);
-  el('kpiOv').innerHTML=h;
-  drawTbl(ad);
-  drawSx();          // sản xuất gộp vào tổng quan
 }
 function drawC2(ad){
   var o=clone();var tf=typeFilter();
@@ -350,6 +317,30 @@ function drawTier(which){
   o2.legend.data=['Nhập','Xuất'];
   o2.series=[{name:'Nhập',type:'bar',data:[a0.nhap,a1.nhap],itemStyle:{color:COL.success,borderRadius:[4,4,0,0]},barMaxWidth:38},{name:'Xuất',type:'bar',data:[a0.xuat,a1.xuat],itemStyle:{color:COL.danger,borderRadius:[4,4,0,0]},barMaxWidth:38}];
   chart(cfg.pfx+'nx').setOption(o2,true);
+}
+
+/* ---- Kho (gộp TP + BTP, filter) ---- */
+var KHO_GS=[['manh_det','Manh dệt','m',COL.primary],['manh_trang','Manh tráng','m',COL.secondary],['tp_xm','TP xi măng','cái',COL.accent],['tp_khac','TP khác','cái',COL.warning]];
+function drawKho(){
+  var ad=activeDays(),tf=typeFilter();
+  var h='';
+  if(tf){
+    var g=KHO_GS.filter(function(x){return x[0]===tf;})[0]||KHO_GS[0];var a=periodAgg(tf,ad);
+    h+=kpi('Tồn đầu kỳ · '+g[1],fmt(a.open),g[2],{t:'đầu kỳ',c:COL.muted},COL.muted);
+    h+=kpi('Tổng nhập',fmt(a.nhap),g[2],{t:'trong kỳ',c:COL.success},COL.success);
+    h+=kpi('Tổng xuất',fmt(a.xuat),g[2],{t:'trong kỳ',c:COL.danger},COL.danger);
+    h+=kpi('Tồn cuối kỳ · '+g[1],fmt(a.close),g[2],{t:(a.close>=a.open?'▲':'▼')+' '+fmt(Math.abs(a.close-a.open)),c:a.close>=a.open?COL.success:COL.danger},COL.primary);
+  }else{
+    KHO_GS.forEach(function(g){var a=periodAgg(g[0],ad);h+=kpi('Tồn cuối · '+g[1],fmt(a.close),g[2],{t:'Nhập '+fmtK(a.nhap)+' · Xuất '+fmtK(a.xuat),c:COL.muted},g[3]);});
+  }
+  el('kpiKho').innerHTML=h;
+  var gsel=tf||'manh_det';
+  var g='<div class="card chart-card col-12"><div class="chart-head"><span class="chart-title" id="khoChartTitle"></span>'+(tf?'':'<span style="font-size:.72rem;color:var(--text-muted)">Chọn nhóm ở bộ lọc "Loại kho" (góc phải trên) để đổi biểu đồ</span>')+'</div><div id="khoChart" class="chart-c"></div></div>';
+  g+=detailCard('kho','m / cái');
+  el('khoGrid').innerHTML=g;
+  el('khoChartTitle').textContent='Nhập – Xuất – Tồn theo ngày — '+GROUP[gsel].name+' ('+GROUP[gsel].unit+')';
+  comboXNT('khoChart',gsel);
+  renderDetail('kho',[['manh_det','Manh dệt'],['manh_trang','Manh tráng'],['tp_xm','TP xi măng'],['tp_khac','TP khác']],tf);
 }
 
 /* ---- NL (demo XNT nguyên liệu) ---- */
@@ -562,14 +553,13 @@ function drawSxTable(){
 }
 
 /* ---- routing ---- */
-var TITLES={ov:['Tổng quan Xuất Nhập Tồn','Bán thành phẩm & thành phẩm · '],tp:['Thành phẩm','Bao xi măng & bao PP khác (cái) · '],btp:['Bán thành phẩm','Manh dệt & Manh tráng (mét) · '],nl:['Nguyên liệu','Hạt nhựa, giấy, phụ liệu (Kg) · số liệu demo · '],vt:['Vật tư – Thiết bị','Máy móc & phụ tùng thay thế · ']};
+var TITLES={tra:['Tra cứu tồn kho',''],kho:['Kho thành phẩm & bán thành phẩm','Manh dệt · tráng · bao — '],nl:['Nguyên liệu','Hạt nhựa, giấy, phụ liệu (Kg) · số liệu demo · '],vt:['Vật tư – Thiết bị','Máy móc & phụ tùng thay thế · ']};
 function rangeTxt(){var ad=activeDays();return 'kỳ '+dlabel(ad[0])+' – '+dlabel(ad[ad.length-1]);}
 function disposeAll(){Object.keys(CI).forEach(function(k){try{CI[k].dispose();}catch(e){}});CI={};}
 function drawPage(pid){
   disposeAll();                 // xoá sạch chart cũ + cache trước khi vẽ trang mới
-  if(pid==='ov')drawOv();
-  else if(pid==='tp')drawTier('tp');
-  else if(pid==='btp')drawTier('btp');
+  if(pid==='tra')drawTra();
+  else if(pid==='kho')drawKho();
   else if(pid==='nl')drawNl();
   else if(pid==='vt')drawVt();
   el('psub').innerText=TITLES[pid][1]+rangeTxt();
@@ -591,7 +581,7 @@ function initFilters(){
 }
 function boot(){
   if(typeof echarts==='undefined'){setTimeout(boot,60);return;}
-  initFilters();CUR='ov';drawPage('ov');
+  initFilters();CUR='tra';drawPage('tra');
 }
 boot();
 window.addEventListener('resize',function(){Object.keys(CI).forEach(function(k){try{CI[k].resize();}catch(e){}});});
